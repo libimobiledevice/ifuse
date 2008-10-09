@@ -45,7 +45,6 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 	iphone_error_t ret = iphone_afc_get_file_attr(afc, path, stbuf);
-	stbuf->st_dev = 200;
 
 	if (ret != IPHONE_E_SUCCESS)
 		res = -ENOENT;

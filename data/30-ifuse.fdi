@@ -1,42 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <deviceinfo version="0.2">
   <device>
+      <match key="usb_device.vendor_id" int="0x5ac">
+	      <match key="usb_device.product_id" int="0x1290">
+		   <append key="info.capabilities" type="strlist">block</append>
+		   <append key="info.capabilities" type="strlist">storage</append>
+		   <merge key="info.callouts.add" type="strlist">hal-iphone-setup</merge>
+		   <merge key="info.category" type="string">storage</merge>
+		   <merge key="storage.bus" type="string">usb</merge>
+		   <merge key="storage.drive_type" type="string">disk</merge>
+		   <merge key="storage.removable" type="bool">true</merge>
+		   <merge key="storage.removable.media_available" type="bool">true</merge>
+		   <merge key="storage.requires_eject" type="bool">false</merge>
+		   <merge key="storage.hotpluggable" type="bool">false</merge>
+		   <merge key="storage.media_check_enabled" type="bool">false</merge>
+		   <merge key="storage.automount_enabled_hint" type="bool">true</merge>
+		   <merge key="storage.no_partitions_hint" type="bool">true</merge>
+		   <merge key="storage.model" type="string">iPhone</merge>
+		   <merge key="storage.vendor" type="string">Apple Computer, Inc.</merge>
+		   <merge key="storage.orginating_device" type="copy_property">/org/freedesktop/Hal/devices/computer</merge>
+		   <append key="block.device" type="copy_property">@info.udi:linux.device_file</append>
+		   <merge key="block.storage_device" type="copy_property">@info.parent:info.udi</merge>
+	      </match>
+      </match>
     <match key="info.subsystem" string="usb">
       <match key="usb.vendor_id" int="0x5ac">
          <match key="usb.product_id" int="0x1290">
-           <!-- This is here to only connect the first time -->
-           <match key="@info.parent:usb_device.configuration_value" int="1">
+	 <match key="usb.interface.number" int="0x1">
+           <remove key="info.capabilities" type="strlist">camera</remove>
            <append key="info.capabilities" type="strlist">block</append>
            <append key="info.capabilities" type="strlist">volume</append>
-           <append key="info.capabilities" type="strlist">storage</append>
-           <merge key="info.category" type="string">storage</merge>
-           <append key="block.device" type="copy_property">@info.parent:linux.device_file</append>
-           <merge key="@info.parent:usb_device.configuration_value" type="int">3</merge>
-           <merge key="storage.bus" type="string">usb</merge>
-           <merge key="storage.drive_type" type="string">disk</merge>
-           <merge key="block.storage_device" type="copy_property">@info.udi:info.udi</merge>
-           <merge key="storage.removable" type="bool">true</merge>
-           <merge key="storage.requires_eject" type="bool">false</merge>
-           <merge key="storage.hotpluggable" type="bool">false</merge>
-           <merge key="storage.media_check_enabled" type="bool">false</merge>
-           <merge key="storage.automount_enabled_hint" type="bool">true</merge>
-           <merge key="storage.no_partitions_hint" type="bool">true</merge>
-           <merge key="storage.model" type="string">iPhone</merge>
-           <merge key="storage.vendor" type="string">Apple Computer, Inc.</merge>
-           <merge key="storage.orginating_device" type="copy_property">@info.udi:info.udi</merge>
-           <merge key="block.is_volume" type="bool">false</merge>
+           <merge key="info.category" type="string">volume</merge>
+           <merge key="info.callouts.add" type="strlist">hal-iphone-setup</merge>
+	   <append key="block.device" type="copy_property">@info.parent:linux.device_file</append>
+	   <merge key="block.storage_device" type="copy_property">@info.parent:info.udi</merge>
+           <merge key="block.is_volume" type="bool">true</merge>
            <merge key="block.no_partitions" type="bool">true</merge>
            <merge key="block.have_scanned" type="bool">false</merge>
-           <append key="volume.fstype" type="string">ifuse</append>
-           <append key="volume.fsusage" type="string">filesystem</append>
-           <append key="volume.mount_point" type="string"></append>
+           <append key="volume.fstype" type="string">fuse.ifuse</append>
+	   <merge key="volume.mount.valid_options" type="strlist">allow_other</merge>
+	   <append key="volume.fsusage" type="string">filesystem</append>
            <append key="volume.label" type="string">iPhone</append>
            <append key="volume.uuid" type="string"></append>
-           <merge key="volume.is_disc" type="bool">false</merge>
-           <merge key="volume.is_mounted" type="bool">false</merge>
-           <merge key="volume.is_partition" type="bool">false</merge>
-           <merge key="volume.is_device_mapper" type="bool">false</merge>
-         </match>
+	   </match>
        </match>
      </match>
     </match>

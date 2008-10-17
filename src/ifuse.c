@@ -295,14 +295,16 @@ int ifuse_mkdir(const char *dir, mode_t ignored)
 		return -1;
 }
 
-void *ifuse_init(struct fuse_conn_info *conn)
+void *ifuse_init_normal(struct fuse_conn_info *conn)
 {
-	if (ifuse_init_with_service(conn, "com.apple.afc2")){
-		return;
-	}else{
-		return ifuse_init_with_service(conn, "com.apple.afc");
-	}
+	return ifuse_init_with_service(conn, "com.apple.afc");
 }
+
+void *ifuse_init_jailbroken(struct fuse_conn_info *conn)
+{
+	return ifuse_init_with_service(conn, "com.apple.afc2");
+}
+
 
 static struct fuse_operations ifuse_oper = {
 	.getattr = ifuse_getattr,
@@ -320,7 +322,7 @@ static struct fuse_operations ifuse_oper = {
 	.rename = ifuse_rename,
 	.fsync = ifuse_fsync,
 	.release = ifuse_release,
-	.init = ifuse_init,
+	.init = ifuse_init_normal,
 	.destroy = ifuse_cleanup
 };
 
@@ -331,7 +333,6 @@ static int ifuse_opt_proc(void *data, const char *arg, int key,
 	static int option_num = 0;
 	(void) data;
 
-	fprintf(stderr, "%s\n", arg);
 	switch (key) {
 	case FUSE_OPT_KEY_OPT:
 		if (strcmp(arg, "allow_other") == 0)
@@ -356,16 +357,34 @@ int main(int argc, char *argv[])
 	char **ammended_argv;
 	int i, j;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	
+	// Parse extra options
+	if (argc > 2 && (ammended_argv = malloc((argc + 1) * sizeof(*ammended_argv)))) {
+		for (i = j = 0; ammended_argv[j] = argv[i], i < argc; i++) {
+			// Try to use the (jailbroken) com.apple.afc2 if requested by the user
+			if (argv[i] && strcmp("--afc2", argv[i]) == 0) {
+				ifuse_oper.init = ifuse_init_jailbroken;
+				continue;
+			}
+			j++;
+		}
+		argv = ammended_argv;
+		argc = j;
+	}
 
 	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1){
 		exit(-1);
 	}
 	
-	//fuse_opt_add_arg(&args, "-o allow_other");
+	if (argc < 2){
+		fprintf(stderr, "A path to the USB device must be specified\n");
+		return -1;
+	}
+
 	char *argument = malloc((strlen(argv[1])+ 10) * sizeof(char));
 	sprintf(argument, "-ofsname=%s", argv[1]);
 	fuse_opt_add_arg(&args, argument);
 	fuse_opt_add_arg(&args, "-osubtype=ifuse");
-	
+
 	return fuse_main(args.argc, args.argv, &ifuse_oper, NULL);
 }

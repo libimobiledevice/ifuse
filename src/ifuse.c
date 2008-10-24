@@ -331,8 +331,7 @@ static struct fuse_operations ifuse_oper = {
 	.destroy = ifuse_cleanup
 };
 
-static int ifuse_opt_proc(void *data, const char *arg, int key,
-                          struct fuse_args *outargs)
+static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
 {
 	char *tmp;
 	static int option_num = 0;
@@ -362,7 +361,7 @@ int main(int argc, char *argv[])
 	char **ammended_argv;
 	int i, j;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
-	
+
 	// Parse extra options
 	if (argc > 2 && (ammended_argv = malloc((argc + 1) * sizeof(*ammended_argv)))) {
 		for (i = j = 0; ammended_argv[j] = argv[i], i < argc; i++) {
@@ -377,16 +376,16 @@ int main(int argc, char *argv[])
 		argc = j;
 	}
 
-	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1){
+	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1) {
 		exit(-1);
 	}
-	
-	if (argc < 2){
+
+	if (argc < 2) {
 		fprintf(stderr, "A path to the USB device must be specified\n");
 		return -1;
 	}
 
-	char *argument = malloc((strlen(argv[1])+ 10) * sizeof(char));
+	char *argument = malloc((strlen(argv[1]) + 10) * sizeof(char));
 	sprintf(argument, "-ofsname=%s", argv[1]);
 	fuse_opt_add_arg(&args, argument);
 	fuse_opt_add_arg(&args, "-osubtype=ifuse");

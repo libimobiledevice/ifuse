@@ -28,6 +28,9 @@
 #include <fcntl.h>
 #include <glib.h>
 #include <unistd.h>
+#include <stdint.h>
+
+typedef uint32_t uint32;		// this annoys me too
 
 #include <libiphone/libiphone.h>
 
@@ -76,18 +79,20 @@ static int ifuse_create(const char *path, mode_t mode, struct fuse_file_info *fi
 {
 	// exactly the same as open but using a different mode
 	iphone_afc_file_t file = NULL;
+	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 
 	iphone_afc_open_file(afc, path, IPHONE_AFC_FILE_WRITE, &file);
-	fh_index++;
-	fi->fh = fh_index;
-	g_hash_table_insert(file_handles, &fh_index, file);
+	*argh_filehandle = iphone_afc_get_file_handle(file);
+	fi->fh = *argh_filehandle;
+	g_hash_table_insert(file_handles, argh_filehandle, file);
 	return 0;
 }
 
 static int ifuse_open(const char *path, struct fuse_file_info *fi)
 {
 	iphone_afc_file_t file = NULL;
+	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 	uint32_t mode = 0;
 
@@ -101,9 +106,9 @@ static int ifuse_open(const char *path, struct fuse_file_info *fi)
 
 	iphone_afc_open_file(afc, path, mode, &file);
 
-	fh_index++;
-	fi->fh = fh_index;
-	g_hash_table_insert(file_handles, &fh_index, file);
+	*argh_filehandle = iphone_afc_get_file_handle(file);
+	fi->fh = *argh_filehandle;
+	g_hash_table_insert(file_handles, argh_filehandle, file);
 
 	return 0;
 }

@@ -82,7 +82,7 @@ static int ifuse_create(const char *path, mode_t mode, struct fuse_file_info *fi
 	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 
-	iphone_afc_open_file(afc, path, IPHONE_AFC_FILE_WRITE, &file);
+	iphone_afc_open_file(afc, path, IPHONE_AFC_FILE_WRITE | IPHONE_AFC_FILE_CREAT, &file);
 	*argh_filehandle = iphone_afc_get_file_handle(file);
 	fi->fh = *argh_filehandle;
 	g_hash_table_insert(file_handles, argh_filehandle, file);
@@ -96,8 +96,10 @@ static int ifuse_open(const char *path, struct fuse_file_info *fi)
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 	uint32_t mode = 0;
 
-	if ((fi->flags & 3) == O_RDWR || (fi->flags & 3) == O_WRONLY) {
-		mode = IPHONE_AFC_FILE_READ;
+	if ((fi->flags & 3) == O_RDWR) {
+		mode = IPHONE_AFC_FILE_RW;
+	} else if ((fi->flags & 3) == O_WRONLY) {
+		mode = IPHONE_AFC_FILE_WRITE;
 	} else if ((fi->flags & 3) == O_RDONLY) {
 		mode = IPHONE_AFC_FILE_READ;
 	} else {

@@ -182,19 +182,6 @@ void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_n
 
 	file_handles = g_hash_table_new(g_int_hash, g_int_equal);
 
-	iphone_get_device(&phone);
-	if (!phone) {
-		fprintf(stderr, "No iPhone found, is it connected?\n");
-		return NULL;
-	}
-
-
-	if (IPHONE_E_SUCCESS != iphone_lckd_new_client(phone, &control)) {
-		iphone_free_device(phone);
-		fprintf(stderr, "Something went wrong in the lockdownd client.\n");
-		return NULL;
-	}
-
 	if (IPHONE_E_SUCCESS == iphone_lckd_start_service(control, service_name, &port) && !port) {
 		iphone_lckd_free_client(control);
 		iphone_free_device(phone);
@@ -341,9 +328,12 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 
 	switch (key) {
 	case FUSE_OPT_KEY_OPT:
-		if (strcmp(arg, "allow_other") == 0)
+		if (strcmp(arg, "allow_other") == 0 || strcmp(arg, "-d") == 0 || strcmp(arg, "-s") == 0)
 			return 1;
-		else
+		else if (strcmp(arg, "--afc2") == 0) {
+			ifuse_oper.init = ifuse_init_jailbroken;
+			return 0;
+		} else
 			return 0;
 		break;
 	case FUSE_OPT_KEY_NONOPT:
@@ -364,20 +354,6 @@ int main(int argc, char *argv[])
 	int i, j;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
-	// Parse extra options
-	if (argc > 2 && (ammended_argv = malloc((argc + 1) * sizeof(*ammended_argv)))) {
-		for (i = j = 0; ammended_argv[j] = argv[i], i < argc; i++) {
-			// Try to use the (jailbroken) com.apple.afc2 if requested by the user
-			if (argv[i] && strcmp("--afc2", argv[i]) == 0) {
-				ifuse_oper.init = ifuse_init_jailbroken;
-				continue;
-			}
-			j++;
-		}
-		argv = ammended_argv;
-		argc = j;
-	}
-
 	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1) {
 		exit(-1);
 	}
@@ -387,10 +363,20 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	char *argument = malloc((strlen(argv[1]) + 10) * sizeof(char));
-	sprintf(argument, "-ofsname=%s", argv[1]);
-	fuse_opt_add_arg(&args, argument);
-	fuse_opt_add_arg(&args, "-osubtype=ifuse");
+	iphone_get_device(&phone);
+	if (!phone) {
+		fprintf(stderr, "No iPhone found, is it connected?\n");
+		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");
+		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
+		return NULL;
+	}
+
+	if (IPHONE_E_SUCCESS != iphone_lckd_new_client(phone, &control)) {
+		iphone_free_device(phone);
+		fprintf(stderr, "Something went in lockdown handshake.\n");
+		fprintf(stderr, "Did you run libiphone-initconf as the current user?\n");
+		return NULL;
+	}
 
 	return fuse_main(args.argc, args.argv, &ifuse_oper, NULL);
 }

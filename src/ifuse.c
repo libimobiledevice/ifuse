@@ -29,6 +29,7 @@
 #include <glib.h>
 #include <unistd.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef uint32_t uint32;		// this annoys me too
 
@@ -212,7 +213,8 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 {
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 	char **info_raw = NULL;
-	uint32_t totalspace = 0, freespace = 0, blocksize = 0, i = 0;
+	uint64_t totalspace = 0, freespace = 0;
+	int i = 0, blocksize = 0;
 
 	iphone_afc_get_devinfo(afc, &info_raw);
 	if (!info_raw)
@@ -220,9 +222,9 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 
 	for (i = 0; info_raw[i]; i++) {
 		if (!strcmp(info_raw[i], "FSTotalBytes")) {
-			totalspace = atoi(info_raw[i + 1]);
+			totalspace = strtoull(info_raw[i + 1], (char **)NULL, 10);
 		} else if (!strcmp(info_raw[i], "FSFreeBytes")) {
-			freespace = atoi(info_raw[i + 1]);
+			freespace = strtoull(info_raw[i + 1], (char **)NULL, 10);
 		} else if (!strcmp(info_raw[i], "FSBlockSize")) {
 			blocksize = atoi(info_raw[i + 1]);
 		}

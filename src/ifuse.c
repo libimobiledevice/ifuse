@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 
 	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1) {
-		exit(-1);
+		return -1;
 	}
 
 	if (argc < 2) {
@@ -368,14 +368,14 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "No iPhone found, is it connected?\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");
 		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
-		return NULL;
+		return 0;
 	}
 
 	if (IPHONE_E_SUCCESS != iphone_lckd_new_client(phone, &control)) {
 		iphone_free_device(phone);
 		fprintf(stderr, "Something went in lockdown handshake.\n");
 		fprintf(stderr, "Did you run libiphone-initconf as the current user?\n");
-		return NULL;
+		return 0;
 	}
 
 	return fuse_main(args.argc, args.argv, &ifuse_oper, NULL);

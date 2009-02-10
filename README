@@ -35,7 +35,9 @@ Now comes the fun bit!
 
 To mount:
 
-	mount -t ifuse <device file> <mountpoint>
+	mount -t ifuse <device file> <mountpoint> (if installed to /sbin)
+
+	./mount.fuse.ifuse <device file> <mountpoint> (for local access)
 
 Note: the device file is not important and can be anything but it will show up
 in the mtab, so sometimes it's useful.
@@ -46,7 +48,9 @@ To unmount:
 Currently ifuse (via the AFC protocol) only gives access to the
 '/var/root/Media/' chroot on the iPhone (containing music/pictures). However,
 if the device has been jailedbreaked a full view of the iPhone's filesystem
-will be available.
+will be available with the following command 
+
+	./mount.fuse.ifuse --afc <device file> <mountpoint>
 
 ==== Setting up FUSE ====
 

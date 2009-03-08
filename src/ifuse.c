@@ -222,9 +222,9 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 
 	for (i = 0; info_raw[i]; i++) {
 		if (!strcmp(info_raw[i], "FSTotalBytes")) {
-			totalspace = strtoull(info_raw[i + 1], (char **)NULL, 10);
+			totalspace = strtoull(info_raw[i + 1], (char **) NULL, 10);
 		} else if (!strcmp(info_raw[i], "FSFreeBytes")) {
-			freespace = strtoull(info_raw[i + 1], (char **)NULL, 10);
+			freespace = strtoull(info_raw[i + 1], (char **) NULL, 10);
 		} else if (!strcmp(info_raw[i], "FSBlockSize")) {
 			blocksize = atoi(info_raw[i + 1]);
 		}
@@ -242,16 +242,8 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 
 int ifuse_truncate(const char *path, off_t size)
 {
-	int result = 0;
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
-	iphone_afc_file_t tfile = NULL;
-	iphone_afc_open_file(afc, path, IPHONE_AFC_FILE_READ, &tfile);
-	if (!tfile)
-		return -1;
-
-	result = iphone_afc_truncate_file(afc, tfile, size);
-	iphone_afc_close_file(afc, tfile);
-	return result;
+	return iphone_afc_truncate(afc, path, size);
 }
 
 int ifuse_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)

@@ -77,7 +77,7 @@ code:
 	git clone git://github.com/MattColyer/ifuse.git
 
 tickets:
-	http://iphone-linux.lighthouseapp.com/projects/27916-iphone-linux/tickets?q=all
+	http://libiphone.lighthouseapp.com/projects/27916-libiphone/tickets?q=all
 
 mailing list:
 	http://lists.mattcolyer.com/listinfo.cgi/iphone-linux-dev-mattcolyer.com

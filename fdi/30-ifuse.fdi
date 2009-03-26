@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<deviceinfo version="0.2">
+  <device>
+    <match key="info.subsystem" string="usb_device">
+      <match key="usb_device.vendor_id" int="0x5ac">
+        <match key="usb_device.product_id" compare_ge="0x1290">
+          <match key="usb_device.product_id" compare_le="0x1293">
+            <append key="info.capabilities" type="strlist">block</append>
+            <append key="info.capabilities" type="strlist">storage</append>
+            <merge key="storage.hotpluggable" type="bool">false</merge>
+            <merge key="storage.removable" type="bool">true</merge>
+            <merge key="storage.automount_enabled_hint" type="bool">true</merge>
+            <merge key="storage.model" type="string">iPhone</merge>
+            <merge key="storage.vendor" type="string">Apple Computer, Inc.</merge>
+            <merge key="storage.orginating_device" type="copy_property">/org/freedesktop/Hal/devices/computer</merge>
+            <append key="block.device" type="copy_property">@info.udi:linux.device_file</append>
+            <merge key="block.storage_device" type="copy_property">@info.parent:info.udi</merge>
+          </match>
+        </match>
+      </match>
+    </match>
+    <match key="info.subsystem" string="usb">
+      <match key="usb.vendor_id" int="0x5ac">
+        <match key="usb.product_id" compare_ge="0x1290">
+          <match key="usb.product_id" compare_le="0x1293">
+            <match key="usb.interface.number" int="0x1">
+              <append key="info.capabilities" type="strlist">block</append>
+              <append key="info.capabilities" type="strlist">volume</append>
+              <append key="block.device" type="copy_property">@info.parent:linux.device_file</append>
+              <merge key="block.storage_device" type="copy_property">@info.parent:info.udi</merge>
+              <append key="volume.fstype" type="string">fuse.ifuse</append>
+              <append key="volume.fsusage" type="string">filesystem</append>
+              <append key="volume.label" type="string">iPhone</append>
+              <append key="volume.uuid" type="string"></append>
+            </match>
+          </match>
+        </match>
+      </match>
+    </match>
+  </device>
+</deviceinfo>

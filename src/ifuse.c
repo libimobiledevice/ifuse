@@ -351,6 +351,7 @@ int main(int argc, char *argv[])
 	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1) {
 		return -1;
 	}
+	fuse_opt_add_arg(&args, "-oallow_other");
 
 	if (argc < 2) {
 		fprintf(stderr, "A path to the USB device must be specified\n");

@@ -56,6 +56,19 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 	return res;
 }
 
+static void free_dictionary(char **dictionary)
+{
+	int i = 0;
+
+	if (!dictionary)
+		return;
+
+	for (i = 0; dictionary[i]; i++) {
+		free(dictionary[i]);
+	}
+	free(dictionary);
+}
+
 static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
 {
 	int i;

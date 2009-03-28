@@ -35,22 +35,29 @@ Now comes the fun bit!
 
 To mount:
 
-	mount -t ifuse <device file> <mountpoint> (if installed to /sbin)
+	mount -t fuse.ifuse <device file> <mountpoint> (if installed to /sbin)
 
 	./mount.fuse.ifuse <device file> <mountpoint> (for local access)
 
-Note: the device file is not important and can be anything but it will show up
-in the mtab, so sometimes it's useful.
+Note:
+	The device file is not important and can be anything but it will show up
+	in the mtab, so sometimes it's useful.
+	If you mount your device as regular user, system migth complain that file
+	/etc/fuse.conf is not readable. It means you do not belong to the 'fuse'
+	group (see below).
 
-To unmount:
+To unmount either do:
 	umount <mountpoint>
+or
+	fusermount -u <mountpoint>
+
 
 Currently ifuse (via the AFC protocol) only gives access to the
 '/var/root/Media/' chroot on the iPhone (containing music/pictures). However,
 if the device has been jailedbreaked a full view of the iPhone's filesystem
 will be available with the following command 
 
-	./mount.fuse.ifuse --afc <device file> <mountpoint>
+	./mount.fuse.ifuse --afc2 <device file> <mountpoint>
 
 ==== Setting up FUSE ====
 
@@ -83,4 +90,4 @@ mailing list:
 	http://lists.mattcolyer.com/listinfo.cgi/iphone-linux-dev-mattcolyer.com
 
 updated:
-	2009-03-23
+	2009-03-28

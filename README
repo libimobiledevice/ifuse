@@ -57,7 +57,7 @@ Currently ifuse (via the AFC protocol) only gives access to the
 if the device has been jailedbreaked a full view of the iPhone's filesystem
 will be available with the following command 
 
-	./mount.fuse.ifuse --afc2 <device file> <mountpoint>
+	./mount.fuse.ifuse --root <device file> <mountpoint>
 
 ==== Setting up FUSE ====
 

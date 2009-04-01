@@ -324,7 +324,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	case FUSE_OPT_KEY_OPT:
 		if (strcmp(arg, "allow_other") == 0 || strcmp(arg, "-d") == 0 || strcmp(arg, "-s") == 0)
 			return 1;
-		else if (strcmp(arg, "--afc2") == 0) {
+		else if (strcmp(arg, "--root") == 0) {
 			ifuse_oper.init = ifuse_init_jailbroken;
 			return 0;
 		} else

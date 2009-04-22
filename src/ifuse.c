@@ -382,7 +382,6 @@ int main(int argc, char *argv[])
 	if (IPHONE_E_SUCCESS != iphone_lckd_new_client(phone, &control)) {
 		iphone_free_device(phone);
 		fprintf(stderr, "Something went in lockdown handshake.\n");
-		fprintf(stderr, "Did you run libiphone-initconf as the current user?\n");
 		return 0;
 	}
 

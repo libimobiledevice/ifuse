@@ -50,8 +50,16 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 	iphone_error_t ret = iphone_afc_get_file_attr(afc, path, stbuf);
 
-	if (ret != IPHONE_E_SUCCESS)
-		res = -ENOENT;
+	if (ret == IPHONE_E_AFC_ERROR) {
+		int e = iphone_afc_get_errno(afc);
+		if (e < 0) {
+			res = -EACCES;
+		} else {
+			res = -e;
+		}
+	} else if (ret != IPHONE_E_SUCCESS) {
+		res = -EACCES;
+	}
 
 	return res;
 }
@@ -109,6 +117,7 @@ static int ifuse_open(const char *path, struct fuse_file_info *fi)
 	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
 	uint32_t mode = 0;
+	iphone_error_t err;
 
 	if ((fi->flags & 3) == O_RDWR) {
 		mode = IPHONE_AFC_FILE_RW;
@@ -120,7 +129,18 @@ static int ifuse_open(const char *path, struct fuse_file_info *fi)
 		mode = IPHONE_AFC_FILE_READ;
 	}
 
-	iphone_afc_open_file(afc, path, mode, &file);
+	err = iphone_afc_open_file(afc, path, mode, &file);
+	if (err == IPHONE_E_AFC_ERROR) {
+		int res = iphone_afc_get_errno(afc);
+		if (res < 0) {
+			return -EACCES;
+		} else {
+			return res;
+		}
+	} else if (err != IPHONE_E_SUCCESS) {
+		return -EINVAL;
+	}
+
 
 	*argh_filehandle = iphone_afc_get_file_handle(file);
 	fi->fh = *argh_filehandle;

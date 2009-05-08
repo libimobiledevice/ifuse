@@ -97,36 +97,48 @@ static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 	return 0;
 }
 
-static int ifuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
+static int get_afc_file_mode(iphone_afc_file_mode_t *afc_mode, int flags)
 {
-	// exactly the same as open but using a different mode
-	iphone_afc_file_t file = NULL;
-	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
-	iphone_afc_client_t afc = fuse_get_context()->private_data;
-
-	iphone_afc_open_file(afc, path, IPHONE_AFC_FILE_WRITE | IPHONE_AFC_FILE_CREAT, &file);
-	*argh_filehandle = iphone_afc_get_file_handle(file);
-	fi->fh = *argh_filehandle;
-	g_hash_table_insert(file_handles, argh_filehandle, file);
+	switch (flags & O_ACCMODE) {
+		case O_RDONLY:
+			*afc_mode = AFC_FOPEN_RDONLY;
+			break;
+		case O_WRONLY:
+			if ((flags & O_TRUNC) == O_TRUNC) {
+				*afc_mode = AFC_FOPEN_WRONLY;
+			} else if ((flags & O_APPEND) == O_APPEND) {
+				*afc_mode = AFC_FOPEN_APPEND;
+			} else {
+				*afc_mode = AFC_FOPEN_RW;
+			}
+			break;
+		case O_RDWR:
+			if ((flags & O_TRUNC) == O_TRUNC) {
+				*afc_mode = AFC_FOPEN_WR;
+			} else if ((flags & O_APPEND) == O_APPEND) {
+				*afc_mode = AFC_FOPEN_RDAPPEND;
+			} else {
+				*afc_mode = AFC_FOPEN_RW;
+			}
+			break;
+		default:
+			*afc_mode = 0;
+			return -1;
+	}
 	return 0;
 }
+
 
 static int ifuse_open(const char *path, struct fuse_file_info *fi)
 {
 	iphone_afc_file_t file = NULL;
-	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
-	uint32_t mode = 0;
 	iphone_error_t err;
-
-	if ((fi->flags & 3) == O_RDWR) {
-		mode = IPHONE_AFC_FILE_RW;
-	} else if ((fi->flags & 3) == O_WRONLY) {
-		mode = IPHONE_AFC_FILE_WRITE;
-	} else if ((fi->flags & 3) == O_RDONLY) {
-		mode = IPHONE_AFC_FILE_READ;
-	} else {
-		mode = IPHONE_AFC_FILE_READ;
+        iphone_afc_file_mode_t mode = 0;
+	uint32 *argh_filehandle = (uint32 *) malloc(sizeof(uint32));
+  
+	if (get_afc_file_mode(&mode, fi->flags) < 0 || (mode == 0)) {
+		return -EPERM;
 	}
 
 	err = iphone_afc_open_file(afc, path, mode, &file);
@@ -141,12 +153,16 @@ static int ifuse_open(const char *path, struct fuse_file_info *fi)
 		return -EINVAL;
 	}
 
-
 	*argh_filehandle = iphone_afc_get_file_handle(file);
 	fi->fh = *argh_filehandle;
 	g_hash_table_insert(file_handles, argh_filehandle, file);
 
 	return 0;
+}
+
+static int ifuse_create(const char *path, mode_t mode, struct fuse_file_info *fi)
+{
+	return ifuse_open(path, fi);
 }
 
 static int ifuse_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)

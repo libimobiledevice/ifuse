@@ -1,6 +1,8 @@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = src fdi
 
+DISTCHECK_CONFIGURE_FLAGS = --disable-root-sbin
+
 indent:
 	indent -kr -ut -ts4 -l120 src/*.c
 

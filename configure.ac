@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(ifuse, 0.1.0, nospam@nowhere.com)
-AM_INIT_AUTOMAKE(ifuse, 0.1.0)
+AC_INIT(ifuse, 0.9.1)
+AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADER([config.h])
 

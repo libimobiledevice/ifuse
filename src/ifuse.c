@@ -239,7 +239,10 @@ void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_n
 		return NULL;
 	}
 
-	iphone_afc_new_client(phone, 3432, port, &afc);
+	iphone_afc_new_client(phone, port, &afc);
+
+	iphone_lckd_free_client(control);
+	control = NULL;
 
 	return afc;
 }
@@ -249,7 +252,9 @@ void ifuse_cleanup(void *data)
 	iphone_afc_client_t afc = (iphone_afc_client_t) data;
 
 	iphone_afc_free_client(afc);
-	iphone_lckd_free_client(control);
+	if (control) {
+		iphone_lckd_free_client(control);
+	}
 	iphone_free_device(phone);
 }
 

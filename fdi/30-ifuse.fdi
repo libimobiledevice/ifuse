@@ -4,7 +4,7 @@
     <match key="info.subsystem" string="usb_device">
       <match key="usb_device.vendor_id" int="0x5ac">
         <match key="usb_device.product_id" compare_ge="0x1290">
-          <match key="usb_device.product_id" compare_le="0x1293">
+          <match key="usb_device.product_id" compare_le="0x1294">
             <append key="info.capabilities" type="strlist">block</append>
             <append key="info.capabilities" type="strlist">storage</append>
             <merge key="storage.hotpluggable" type="bool">false</merge>
@@ -25,7 +25,7 @@
     <match key="info.subsystem" string="usb">
       <match key="usb.vendor_id" int="0x5ac">
         <match key="usb.product_id" compare_ge="0x1290">
-          <match key="usb.product_id" compare_le="0x1293">
+          <match key="usb.product_id" compare_le="0x1294">
             <match key="usb.interface.number" int="0x1">
               <append key="info.capabilities" type="strlist">block</append>
               <append key="info.capabilities" type="strlist">volume</append>

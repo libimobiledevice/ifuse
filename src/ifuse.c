@@ -336,6 +336,51 @@ int ifuse_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)
 	return iphone_afc_truncate_file(afc, fi->fh, size);
 }
 
+int ifuse_readlink(const char *path, char *linktarget, size_t buflen)
+{
+	int i, ret;
+	char **info = NULL;
+	if (!path || !linktarget || (buflen == 0)) {
+		return -EINVAL;
+	}
+	linktarget[0] = '\0'; // in case the link target cannot be determined
+	iphone_afc_client_t afc = fuse_get_context()->private_data;
+	iphone_error_t res = iphone_afc_get_file_info(afc, path, &info);
+	if ((res == IPHONE_E_SUCCESS) && info) {
+		ret = -1;
+		for (i = 0; info[i]; i+=2) {
+			if (!strcmp(info[i], "LinkTarget")) {
+				strncpy(linktarget, info[i+1], buflen-1);
+				linktarget[buflen-1] = '\0';
+				ret = 0;
+			}
+		}
+		free_dictionary(info);
+	} else {
+		ret = -1;
+	}
+	
+	return ret;
+}
+
+int ifuse_symlink(const char *target, const char *linkname)
+{
+	iphone_afc_client_t afc = fuse_get_context()->private_data;
+	if (IPHONE_E_SUCCESS == iphone_afc_make_link(afc, IPHONE_AFC_SYMLINK, target, linkname))
+		return 0;
+	else
+		return -1; 
+}
+
+int ifuse_link(const char *target, const char *linkname)
+{
+	iphone_afc_client_t afc = fuse_get_context()->private_data;
+	if (IPHONE_E_SUCCESS == iphone_afc_make_link(afc, IPHONE_AFC_HARDLINK, target, linkname))
+		return 0;
+	else
+		return -1; 
+}
+
 int ifuse_unlink(const char *path)
 {
 	iphone_afc_client_t afc = fuse_get_context()->private_data;
@@ -386,6 +431,9 @@ static struct fuse_operations ifuse_oper = {
 	.write = ifuse_write,
 	.truncate = ifuse_truncate,
 	.ftruncate = ifuse_ftruncate,
+	.readlink = ifuse_readlink,
+	.symlink = ifuse_symlink,
+	.link = ifuse_link,
 	.unlink = ifuse_unlink,
 	.rename = ifuse_rename,
 	.fsync = ifuse_fsync,

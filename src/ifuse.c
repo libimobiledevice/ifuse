@@ -90,6 +90,14 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 					stbuf->st_mode = S_IFDIR;
 				} else if (!strcmp(info[i+1], "S_IFLNK")) {
 					stbuf->st_mode = S_IFLNK;
+				} else if (!strcmp(info[i+1], "S_IFBLK")) {
+					stbuf->st_mode = S_IFBLK;
+				} else if (!strcmp(info[i+1], "S_IFCHR")) {
+					stbuf->st_mode = S_IFCHR;
+				} else if (!strcmp(info[i+1], "S_IFIFO")) {
+					stbuf->st_mode = S_IFIFO;
+				} else if (!strcmp(info[i+1], "S_IFSOCK")) {
+					stbuf->st_mode = S_IFSOCK;
 				}
 			} else if (!strcmp(info[i], "st_nlink")) {
 				stbuf->st_nlink = atoi(info[i+1]);

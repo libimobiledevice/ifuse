@@ -34,12 +34,13 @@
 typedef uint32_t uint32;		// this annoys me too
 
 #include <libiphone/libiphone.h>
+#include <libiphone/lockdown.h>
 #include <libiphone/afc.h>
 
 int g_blocksize = 4096; // assume this is the default block size
 
 iphone_device_t phone = NULL;
-iphone_lckd_client_t control = NULL;
+lockdownd_client_t control = NULL;
 
 int debug = 0;
 
@@ -255,8 +256,8 @@ void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_n
 
 	conn->async_read = 0;
 
-	if (IPHONE_E_SUCCESS == iphone_lckd_start_service(control, service_name, &port) && !port) {
-		iphone_lckd_free_client(control);
+	if (IPHONE_E_SUCCESS == lockdownd_start_service(control, service_name, &port) && !port) {
+		lockdownd_free_client(control);
 		iphone_free_device(phone);
 		fprintf(stderr, "Something went wrong when starting AFC.");
 		return NULL;
@@ -264,7 +265,7 @@ void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_n
 
 	afc_new_client(phone, port, &afc);
 
-	iphone_lckd_free_client(control);
+	lockdownd_free_client(control);
 	control = NULL;
 
 	if (afc) {
@@ -291,7 +292,7 @@ void ifuse_cleanup(void *data)
 
 	afc_free_client(afc);
 	if (control) {
-		iphone_lckd_free_client(control);
+		lockdownd_free_client(control);
 	}
 	iphone_free_device(phone);
 }
@@ -503,7 +504,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (IPHONE_E_SUCCESS != iphone_lckd_new_client(phone, &control)) {
+	if (IPHONE_E_SUCCESS != lockdownd_new_client(phone, &control)) {
 		iphone_free_device(phone);
 		fprintf(stderr, "Something went in lockdown handshake.\n");
 		return 0;

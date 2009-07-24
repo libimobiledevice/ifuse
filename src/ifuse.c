@@ -465,6 +465,10 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		else if (strcmp(arg, "--root") == 0) {
 			ifuse_oper.init = ifuse_init_jailbroken;
 			return 0;
+		} else if (strcmp(arg, "--debug") == 0) {
+			iphone_set_debug_mask(DBGMASK_ALL);
+			iphone_set_debug(1);
+			return 0;
 		} else
 			return 0;
 		break;

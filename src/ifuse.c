@@ -37,7 +37,8 @@ typedef uint32_t uint32;		// this annoys me too
 #include <libiphone/lockdown.h>
 #include <libiphone/afc.h>
 
-int g_blocksize = 4096; // assume this is the default block size
+/* assume this is the default block size */
+int g_blocksize = 4096;
 
 iphone_device_t phone = NULL;
 lockdownd_client_t control = NULL;
@@ -428,13 +429,12 @@ void *ifuse_init_jailbroken(struct fuse_conn_info *conn)
 	return ifuse_init_with_service(conn, "com.apple.afc2");
 }
 
-
 static struct fuse_operations ifuse_oper = {
 	.getattr = ifuse_getattr,
 	.statfs = ifuse_statfs,
 	.readdir = ifuse_readdir,
 	.mkdir = ifuse_mkdir,
-	.rmdir = ifuse_unlink,		// AFC uses the same op for both.
+	.rmdir = ifuse_unlink,
 	.create = ifuse_create,
 	.open = ifuse_open,
 	.read = ifuse_read,
@@ -504,9 +504,10 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (IPHONE_E_SUCCESS != lockdownd_new_client(phone, &control)) {
+	if (IPHONE_E_SUCCESS != lockdownd_client_new(phone, &control)) {
 		iphone_free_device(phone);
-		fprintf(stderr, "Something went in lockdown handshake.\n");
+		fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
+		fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");
 		return 0;
 	}
 

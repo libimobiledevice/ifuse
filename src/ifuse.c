@@ -58,6 +58,94 @@ static void free_dictionary(char **dictionary)
 	free(dictionary);
 }
 
+struct afc_error_mapping {
+	afc_error_t from;
+	int to;
+} static afc_error_to_errno_map[] = {
+	{AFC_E_SUCCESS			, 0},
+	{AFC_E_OP_HEADER_INVALID	, EIO},
+	{AFC_E_NO_RESOURCES		, EMFILE},
+	{AFC_E_READ_ERROR		, ENOTDIR},
+	{AFC_E_WRITE_ERROR		, EIO},
+	{AFC_E_UNKNOWN_PACKET_TYPE	, EIO},
+	{AFC_E_INVALID_ARGUMENT		, EINVAL},
+	{AFC_E_OBJECT_NOT_FOUND		, ENOENT},
+	{AFC_E_OBJECT_IS_DIR		, EISDIR},
+	{AFC_E_PERM_DENIED		, EPERM},
+	{AFC_E_SERVICE_NOT_CONNECTED	, ENXIO},
+	{AFC_E_OP_TIMEOUT		, ETIMEDOUT},
+	{AFC_E_TOO_MUCH_DATA		, EFBIG},
+	{AFC_E_END_OF_DATA		, ENODATA},
+	{AFC_E_OP_NOT_SUPPORTED		, ENOSYS},
+	{AFC_E_OBJECT_EXISTS		, EEXIST},
+	{AFC_E_OBJECT_BUSY		, EBUSY},
+	{AFC_E_NO_SPACE_LEFT		, ENOSPC},
+	{AFC_E_OP_WOULD_BLOCK		, EWOULDBLOCK},
+	{AFC_E_IO_ERROR			, EIO},
+	{AFC_E_OP_INTERRUPTED		, EINTR},
+	{AFC_E_OP_IN_PROGRESS		, EALREADY},
+	{AFC_E_INTERNAL_ERROR		, EIO},
+	{-1}
+};
+
+/** 
+ * Tries to convert the AFC error value into a meaningful errno value.
+ *
+ * @param client AFC client to retrieve status value from.
+ *
+ * @return errno value.
+ */
+static int get_afc_error_as_errno(afc_error_t error)
+{
+	int i = 0;
+	int res = -1;
+
+	while (afc_error_to_errno_map[i++].from != -1) {
+		if (afc_error_to_errno_map[i].from == error) {
+			res = afc_error_to_errno_map[i++].to;
+			break;
+		}
+	}
+
+	if (res == -1) {
+		fprintf(stderr, "Unknown AFC status %d.\n", error);
+		res = EIO;
+	}
+
+	return res;
+}
+
+static int get_afc_file_mode(afc_file_mode_t *afc_mode, int flags)
+{
+	switch (flags & O_ACCMODE) {
+		case O_RDONLY:
+			*afc_mode = AFC_FOPEN_RDONLY;
+			break;
+		case O_WRONLY:
+			if ((flags & O_TRUNC) == O_TRUNC) {
+				*afc_mode = AFC_FOPEN_WRONLY;
+			} else if ((flags & O_APPEND) == O_APPEND) {
+				*afc_mode = AFC_FOPEN_APPEND;
+			} else {
+				*afc_mode = AFC_FOPEN_RW;
+			}
+			break;
+		case O_RDWR:
+			if ((flags & O_TRUNC) == O_TRUNC) {
+				*afc_mode = AFC_FOPEN_WR;
+			} else if ((flags & O_APPEND) == O_APPEND) {
+				*afc_mode = AFC_FOPEN_RDAPPEND;
+			} else {
+				*afc_mode = AFC_FOPEN_RW;
+			}
+			break;
+		default:
+			*afc_mode = 0;
+			return -1;
+	}
+	return 0;
+}
+
 static int ifuse_getattr(const char *path, struct stat *stbuf)
 {
 	int i;
@@ -65,18 +153,12 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 	char **info = NULL;
 
 	afc_client_t afc = fuse_get_context()->private_data;
-	iphone_error_t ret = afc_get_file_info(afc, path, &info);
+	afc_error_t ret = afc_get_file_info(afc, path, &info);
 
 	memset(stbuf, 0, sizeof(struct stat));
-	if (ret == IPHONE_E_AFC_ERROR) {
-		int e = afc_get_errno(afc);
-		if (e < 0) {
-			res = -EACCES;
-		} else {
-			res = -e;
-		}
-	} else if (ret != IPHONE_E_SUCCESS) {
-		res = -EACCES;
+	if (ret != AFC_E_SUCCESS) {
+		int e = get_afc_error_as_errno(ret);
+		res = -e;
 	} else if (!info) {
 		res = -1;
 	} else {
@@ -114,7 +196,7 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 		} else if (S_ISLNK(stbuf->st_mode)) {
 			stbuf->st_mode |= 0777;
 		} else {
-	    		stbuf->st_mode |= 0644;
+			stbuf->st_mode |= 0644;
 		}
 
 		// and set some additional info
@@ -133,7 +215,7 @@ static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 	char **dirs = NULL;
 	afc_client_t afc = fuse_get_context()->private_data;
 
-	afc_get_dir_list(afc, path, &dirs);
+	afc_read_directory(afc, path, &dirs);
 
 	if (!dirs)
 		return -ENOENT;
@@ -147,59 +229,22 @@ static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 	return 0;
 }
 
-static int get_afc_file_mode(afc_file_mode_t *afc_mode, int flags)
-{
-	switch (flags & O_ACCMODE) {
-		case O_RDONLY:
-			*afc_mode = AFC_FOPEN_RDONLY;
-			break;
-		case O_WRONLY:
-			if ((flags & O_TRUNC) == O_TRUNC) {
-				*afc_mode = AFC_FOPEN_WRONLY;
-			} else if ((flags & O_APPEND) == O_APPEND) {
-				*afc_mode = AFC_FOPEN_APPEND;
-			} else {
-				*afc_mode = AFC_FOPEN_RW;
-			}
-			break;
-		case O_RDWR:
-			if ((flags & O_TRUNC) == O_TRUNC) {
-				*afc_mode = AFC_FOPEN_WR;
-			} else if ((flags & O_APPEND) == O_APPEND) {
-				*afc_mode = AFC_FOPEN_RDAPPEND;
-			} else {
-				*afc_mode = AFC_FOPEN_RW;
-			}
-			break;
-		default:
-			*afc_mode = 0;
-			return -1;
-	}
-	return 0;
-}
-
-
 static int ifuse_open(const char *path, struct fuse_file_info *fi)
 {
 	int i;
 	afc_client_t afc = fuse_get_context()->private_data;
-	iphone_error_t err;
-        afc_file_mode_t mode = 0;
-  
-	if (get_afc_file_mode(&mode, fi->flags) < 0 || (mode == 0)) {
+	afc_error_t err;
+	afc_file_mode_t mode = 0;
+
+	err = get_afc_file_mode(&mode, fi->flags);
+	if (err != AFC_E_SUCCESS || (mode == 0)) {
 		return -EPERM;
 	}
 
-	err = afc_open_file(afc, path, mode, &fi->fh);
-	if (err == IPHONE_E_AFC_ERROR) {
-		int res = afc_get_errno(afc);
-		if (res < 0) {
-			return -EACCES;
-		} else {
-			return res;
-		}
-	} else if (err != IPHONE_E_SUCCESS) {
-		return -EINVAL;
+	err = afc_file_open(afc, path, mode, &fi->fh);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
 	}
 
 	return 0;
@@ -218,8 +263,18 @@ static int ifuse_read(const char *path, char *buf, size_t size, off_t offset, st
 	if (size == 0)
 		return 0;
 
-	if (IPHONE_E_SUCCESS == afc_seek_file(afc, fi->fh, offset, SEEK_SET))
-		afc_read_file(afc, fi->fh, buf, size, &bytes);
+	afc_error_t err = afc_file_seek(afc, fi->fh, offset, SEEK_SET);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+
+	err = afc_file_read(afc, fi->fh, buf, size, &bytes);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+
 	return bytes;
 }
 
@@ -231,8 +286,18 @@ static int ifuse_write(const char *path, const char *buf, size_t size, off_t off
 	if (size == 0)
 		return 0;
 
-	if (IPHONE_E_SUCCESS == afc_seek_file(afc, fi->fh, offset, SEEK_SET))
-		afc_write_file(afc, fi->fh, buf, size, &bytes);
+	afc_error_t err = afc_file_seek(afc, fi->fh, offset, SEEK_SET);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+
+	err = afc_file_write(afc, fi->fh, buf, size, &bytes);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+
 	return bytes;
 }
 
@@ -245,7 +310,7 @@ static int ifuse_release(const char *path, struct fuse_file_info *fi)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
 
-	afc_close_file(afc, fi->fh);
+	afc_file_close(afc, fi->fh);
 
 	return 0;
 }
@@ -257,23 +322,23 @@ void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_n
 
 	conn->async_read = 0;
 
-	if (IPHONE_E_SUCCESS == lockdownd_start_service(control, service_name, &port) && !port) {
-		lockdownd_free_client(control);
-		iphone_free_device(phone);
+	if (LOCKDOWN_E_SUCCESS == lockdownd_start_service(control, service_name, &port) && !port) {
+		lockdownd_client_free(control);
+		iphone_device_free(phone);
 		fprintf(stderr, "Something went wrong when starting AFC.");
 		return NULL;
 	}
 
-	afc_new_client(phone, port, &afc);
+	afc_client_new(phone, port, &afc);
 
-	lockdownd_free_client(control);
+	lockdownd_client_free(control);
 	control = NULL;
 
 	if (afc) {
 		// get file system block size
 		int i;
 		char **info_raw = NULL;
-		if ((IPHONE_E_SUCCESS == afc_get_devinfo(afc, &info_raw)) && info_raw) {
+		if ((AFC_E_SUCCESS == afc_get_device_info(afc, &info_raw)) && info_raw) {
 			for (i = 0; info_raw[i]; i+=2) {
 				if (!strcmp(info_raw[i], "FSBlockSize")) {
 					g_blocksize = atoi(info_raw[i + 1]);
@@ -291,11 +356,11 @@ void ifuse_cleanup(void *data)
 {
 	afc_client_t afc = (afc_client_t) data;
 
-	afc_free_client(afc);
+	afc_client_free(afc);
 	if (control) {
-		lockdownd_free_client(control);
+		lockdownd_client_free(control);
 	}
-	iphone_free_device(phone);
+	iphone_device_free(phone);
 }
 
 int ifuse_flush(const char *path, struct fuse_file_info *fi)
@@ -310,7 +375,11 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 	uint64_t totalspace = 0, freespace = 0;
 	int i = 0, blocksize = 0;
 
-	afc_get_devinfo(afc, &info_raw);
+	afc_error_t err = afc_get_device_info(afc, &info_raw);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
 	if (!info_raw)
 		return -ENOENT;
 
@@ -325,26 +394,36 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 	}
 	free_dictionary(info_raw);
 
-	// Now to fill the struct.
 	stats->f_bsize = stats->f_frsize = blocksize;
-	stats->f_blocks = totalspace / blocksize;	// gets the blocks by dividing bytes by blocksize
-	stats->f_bfree = stats->f_bavail = freespace / blocksize;	// all bytes are free to everyone, I guess.
-	stats->f_namemax = 255;		// blah
-	stats->f_files = stats->f_ffree = 1000000000;	// make up any old thing, I guess
+	stats->f_blocks = totalspace / blocksize;
+	stats->f_bfree = stats->f_bavail = freespace / blocksize;
+	stats->f_namemax = 255;
+	stats->f_files = stats->f_ffree = 1000000000;
+
 	return 0;
 }
 
 int ifuse_truncate(const char *path, off_t size)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	return afc_truncate(afc, path, size);
+	afc_error_t err = afc_truncate(afc, path, size);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+	return 0;
 }
 
 int ifuse_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
 
-	return afc_truncate_file(afc, fi->fh, size);
+	afc_error_t err = afc_file_truncate(afc, fi->fh, size);
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+	return 0;
 }
 
 int ifuse_readlink(const char *path, char *linktarget, size_t buflen)
@@ -356,8 +435,8 @@ int ifuse_readlink(const char *path, char *linktarget, size_t buflen)
 	}
 	linktarget[0] = '\0'; // in case the link target cannot be determined
 	afc_client_t afc = fuse_get_context()->private_data;
-	iphone_error_t res = afc_get_file_info(afc, path, &info);
-	if ((res == IPHONE_E_SUCCESS) && info) {
+	afc_error_t err = afc_get_file_info(afc, path, &info);
+	if ((err == AFC_E_SUCCESS) && info) {
 		ret = -1;
 		for (i = 0; info[i]; i+=2) {
 			if (!strcmp(info[i], "LinkTarget")) {
@@ -368,55 +447,66 @@ int ifuse_readlink(const char *path, char *linktarget, size_t buflen)
 		}
 		free_dictionary(info);
 	} else {
-		ret = -1;
+		ret = get_afc_error_as_errno(err);
+		return -ret;
 	}
-	
+
 	return ret;
 }
 
 int ifuse_symlink(const char *target, const char *linkname)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	if (IPHONE_E_SUCCESS == afc_make_link(afc, AFC_SYMLINK, target, linkname))
+	
+	afc_error_t err = afc_make_link(afc, AFC_SYMLINK, target, linkname);
+	if (err == AFC_E_SUCCESS)
 		return 0;
-	else
-		return -1; 
+	
+	return -get_afc_error_as_errno(err);
 }
 
 int ifuse_link(const char *target, const char *linkname)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	if (IPHONE_E_SUCCESS == afc_make_link(afc, AFC_HARDLINK, target, linkname))
+
+	afc_error_t err = afc_make_link(afc, AFC_HARDLINK, target, linkname);
+	if (err == AFC_E_SUCCESS)
 		return 0;
-	else
-		return -1; 
+
+	return -get_afc_error_as_errno(err);
 }
 
 int ifuse_unlink(const char *path)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	if (IPHONE_E_SUCCESS == afc_delete_file(afc, path))
+
+	afc_error_t err = afc_remove_path(afc, path);
+	if (err == AFC_E_SUCCESS)
 		return 0;
-	else
-		return -1;
+
+	return -get_afc_error_as_errno(err);
 }
 
 int ifuse_rename(const char *from, const char *to)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	if (IPHONE_E_SUCCESS == afc_rename_file(afc, from, to))
+	
+	afc_error_t err = afc_rename_path(afc, from, to);
+	if (err == AFC_E_SUCCESS)
 		return 0;
-	else
-		return -1;
+
+	return -get_afc_error_as_errno(err);
 }
 
 int ifuse_mkdir(const char *dir, mode_t ignored)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	if (IPHONE_E_SUCCESS == afc_mkdir(afc, dir))
+
+	afc_error_t err = afc_make_directory(afc, dir);
+	if (err == AFC_E_SUCCESS)
 		return 0;
-	else
-		return -1;
+
+	return -get_afc_error_as_errno(err);
 }
 
 void *ifuse_init_normal(struct fuse_conn_info *conn)
@@ -467,7 +557,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 			return 0;
 		} else if (strcmp(arg, "--debug") == 0) {
 			iphone_set_debug_mask(DBGMASK_ALL);
-			iphone_set_debug(1);
+			iphone_set_debug_level(1);
 			return 0;
 		} else
 			return 0;
@@ -508,8 +598,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (IPHONE_E_SUCCESS != lockdownd_client_new(phone, &control)) {
-		iphone_free_device(phone);
+	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(phone, &control)) {
+		iphone_device_free(phone);
 		fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
 		fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");
 		return 0;

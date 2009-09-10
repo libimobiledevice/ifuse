@@ -591,7 +591,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	iphone_get_device(&phone);
+	iphone_device_new(&phone, NULL);
 	if (!phone) {
 		fprintf(stderr, "No iPhone found, is it connected?\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");

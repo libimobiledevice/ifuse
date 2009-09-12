@@ -40,4 +40,4 @@ AC_ARG_ENABLE([root-sbin],
               [without_root_sbin=yes],[without_root_sbin=no])
 AM_CONDITIONAL([WITHOUT_ROOT_SBIN], test "x$without_root_sbin" = "xyes")
 
-AC_OUTPUT(Makefile src/Makefile fdi/Makefile)
+AC_OUTPUT(Makefile src/Makefile)

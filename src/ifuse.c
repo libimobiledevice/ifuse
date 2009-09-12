@@ -21,6 +21,10 @@
 
 #define FUSE_USE_VERSION  26
 
+#ifdef HAVE_CONFIG_H
+#include <config.h>
+#endif /* HAVE_CONFIG_H */
+
 #include <fuse.h>
 #include <stdio.h>
 #include <string.h>
@@ -44,6 +48,30 @@ iphone_device_t phone = NULL;
 lockdownd_client_t control = NULL;
 
 int debug = 0;
+
+static struct {
+	char *mount_point;
+	char *device_uuid;
+} opts;
+
+enum {
+	KEY_HELP = 1,
+	KEY_VERSION,
+	KEY_ROOT,
+	KEY_UUID,
+	KEY_DEBUG
+};
+
+static struct fuse_opt ifuse_opts[] = {
+	FUSE_OPT_KEY("-V",             KEY_VERSION),
+	FUSE_OPT_KEY("--version",      KEY_VERSION),
+	FUSE_OPT_KEY("-h",             KEY_HELP),
+	FUSE_OPT_KEY("--help",         KEY_HELP),
+	FUSE_OPT_KEY("--uuid=",        KEY_UUID),
+	FUSE_OPT_KEY("--root",         KEY_ROOT),
+	FUSE_OPT_KEY("--debug",        KEY_DEBUG),
+	FUSE_OPT_END
+};
 
 static void free_dictionary(char **dictionary)
 {
@@ -543,57 +571,104 @@ static struct fuse_operations ifuse_oper = {
 	.destroy = ifuse_cleanup
 };
 
+static void print_usage()
+{
+	fprintf(stderr, "Usage: ifuse <mount_point> [OPTIONS]\n");
+	fprintf(stderr, "Mount filesystem of an iPhone/iPod Touch.\n\n");
+	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
+	fprintf(stderr, "  -u, --uuid UUID\tmount specific device by its 40-digit device UUID\n");
+	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
+	fprintf(stderr, "  -V, --version\t\tprint version\n");
+	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
+	fprintf(stderr, "  --debug\t\tenable libiphone communication debugging\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Example:\n\n");
+	fprintf(stderr, "  $ ifuse /media/iPhone --root\n\n");
+	fprintf(stderr, "  This mounts the root filesystem of the first attached device on\n");
+	fprintf(stderr, "  this computer in the directory /media/iPhone.\n");
+	fprintf(stderr, "\n");
+}
+
 static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
 {
 	char *tmp;
 	static int option_num = 0;
-	(void) data;
+	int res = 1;
 
 	switch (key) {
+	case KEY_UUID:
+		opts.device_uuid = strdup(arg+7);
+		res = 0;
+		break;
+	case KEY_DEBUG:
+		iphone_set_debug_mask(DBGMASK_ALL);
+		iphone_set_debug_level(1);
+		res = 0;
+		break;
+	case KEY_ROOT:
+		ifuse_oper.init = ifuse_init_jailbroken;
+		res = 0;
+		break;
+	case KEY_HELP:
+		print_usage();
+		exit(1);
+	case KEY_VERSION:
+		fprintf(stderr, "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
+		exit(0);
 	case FUSE_OPT_KEY_OPT:
-		if (strcmp(arg, "allow_other") == 0 || strcmp(arg, "-d") == 0 || strcmp(arg, "-s") == 0)
-			return 1;
-		else if (strcmp(arg, "--root") == 0) {
-			ifuse_oper.init = ifuse_init_jailbroken;
-			return 0;
-		} else if (strcmp(arg, "--debug") == 0) {
-			iphone_set_debug_mask(DBGMASK_ALL);
-			iphone_set_debug_level(1);
-			return 0;
-		} else
-			return 0;
+		/* ignore other options and pass them to fuse_main later */
 		break;
 	case FUSE_OPT_KEY_NONOPT:
+		if(option_num == 0) {
+			opts.mount_point = strdup(arg);
+		}
+		if(option_num == 1) {
+			/* compatibility to older style which passed a device file option first */
+			free(opts.mount_point);
+			opts.mount_point = strdup(arg);
+		}
 		option_num++;
-
-		// Throw the first nameless option away (the mountpoint)
-		if (option_num == 1)
-			return 0;
-		else
-			return 1;
+		break;
 	}
-	return 1;
+	return res;
 }
 
 int main(int argc, char *argv[])
 {
 	char **ammended_argv;
-	int i, j;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
+	struct stat mst;
 
-	if (fuse_opt_parse(&args, NULL, NULL, ifuse_opt_proc) == -1) {
+	memset(&opts, 0, sizeof(opts));
+
+	if (fuse_opt_parse(&args, NULL, ifuse_opts, ifuse_opt_proc) == -1) {
 		return -1;
 	}
 	fuse_opt_add_arg(&args, "-oallow_other");
 
-	if (argc < 2) {
-		fprintf(stderr, "A path to the USB device must be specified\n");
+	if (!opts.mount_point) {
+		fprintf(stderr, "ERROR: No mount point specified\n");
 		return -1;
 	}
 
-	iphone_device_new(&phone, NULL);
+	if (opts.device_uuid && strlen(opts.device_uuid) != 40) {
+		fprintf(stderr, "Invalid device UUID specified, length needs to be 40 characters\n");
+		return -1;
+	}
+
+	if (stat(opts.mount_point, &mst) < 0) {
+		if (errno == ENOENT) {
+			fprintf(stderr, "ERROR: the mount point specified does not exist\n");
+			return -1;
+		}
+		
+		fprintf(stderr, "There was an error accessing the mount point: %s\n", strerror(errno));
+		return -1;
+	}
+
+	iphone_device_new(&phone, opts.device_uuid ? opts.device_uuid : NULL);
 	if (!phone) {
-		fprintf(stderr, "No iPhone found, is it connected?\n");
+		fprintf(stderr, "No device found, is it connected?\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");
 		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
 		return 0;

@@ -34,10 +34,4 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
-AC_ARG_ENABLE([root-sbin],
-              AS_HELP_STRING([--disable-root-sbin],
-                             [Don't install mount helper in /sbin]),
-              [without_root_sbin=yes],[without_root_sbin=no])
-AM_CONDITIONAL([WITHOUT_ROOT_SBIN], test "x$without_root_sbin" = "xyes")
-
 AC_OUTPUT(Makefile src/Makefile)

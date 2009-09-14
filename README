@@ -2,8 +2,7 @@ INSTALLATION
 ================================================================================
 
 For:
-	Apple iPhone/iPod Touch 1.0/1.1/1.1.1/1.2/1.3/2.0+
-	+ iPod USB cable
+	Apple iPhone/iPod Touch + iPod USB cable
 
 You must have:
 	libiphone 
@@ -35,29 +34,27 @@ Now comes the fun bit!
 
 To mount:
 
-	mount -t fuse.ifuse <device file> <mountpoint> (if installed to /sbin)
-
-	./mount.fuse.ifuse <device file> <mountpoint> (for local access)
+	$ ifuse <mountpoint>
 
 Note:
-	The device file is not important and can be anything but it will show up
-	in the mtab, so sometimes it's useful.
 	If you mount your device as regular user, system migth complain that file
 	/etc/fuse.conf is not readable. It means you do not belong to the 'fuse'
 	group (see below).
 
-To unmount either do:
-	umount <mountpoint>
-or
-	fusermount -u <mountpoint>
+To unmount you do:
+	$ fusermount -u <mountpoint>
 
 
-Currently ifuse (via the AFC protocol) only gives access to the
+By default, iFuse (via the AFC protocol) only gives access to the
 '/var/root/Media/' chroot on the iPhone (containing music/pictures). However,
-if the device has been jailedbreaked a full view of the iPhone's filesystem
-will be available with the following command 
+if the device has been jailedbroken, a full view of the iPhone's filesystem
+will be available using the following command when mounting 
 
-	./mount.fuse.ifuse --root <device file> <mountpoint>
+	$ ifuse --root <mountpoint>
+
+Addtional help can be shown using:
+
+	$ ifuse --help
 
 ==== Setting up FUSE ====
 
@@ -74,7 +71,6 @@ You can check your membership of the 'fuse' group with:
 If you have just added yourself, you will need to logout and log back
 in for the group change to become visible.
 
-
 == Who/what/where? ==
 
 wiki:
@@ -90,4 +86,5 @@ mailing list:
 	http://lists.mattcolyer.com/listinfo.cgi/iphone-linux-dev-mattcolyer.com
 
 updated:
-	2009-03-28
+	2009-09-13
+

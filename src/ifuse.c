@@ -215,6 +215,8 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 				}
 			} else if (!strcmp(info[i], "st_nlink")) {
 				stbuf->st_nlink = atoi(info[i+1]);
+			} else if (!strcmp(info[i], "st_mtime")) {
+				stbuf->st_mtime = (time_t)(atoll(info[i+1]) / 1000000000);
 			}
 		}
 		free_dictionary(info);

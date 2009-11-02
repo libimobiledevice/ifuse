@@ -332,6 +332,24 @@ static int ifuse_write(const char *path, const char *buf, size_t size, off_t off
 	return bytes;
 }
 
+static int ifuse_utimens(const char *path, const struct timespec tv[2])
+{
+	afc_client_t afc = fuse_get_context()->private_data;
+	uint64_t mtime = (uint64_t)tv[1].tv_sec * (uint64_t)1000000000 + (uint64_t)tv[1].tv_nsec;
+
+	afc_error_t err = afc_set_file_time(afc, path, mtime);
+	if (err == AFC_E_UNKNOWN_PACKET_TYPE) {
+		/* ignore error for pre-3.1 devices as they do not support setting file modification times */
+		return 0;
+	}
+	if (err != AFC_E_SUCCESS) {
+		int res = get_afc_error_as_errno(err);
+		return -res;
+	}
+
+	return 0;
+}
+
 static int ifuse_fsync(const char *path, int datasync, struct fuse_file_info *fi)
 {
 	return 0;
@@ -567,6 +585,7 @@ static struct fuse_operations ifuse_oper = {
 	.link = ifuse_link,
 	.unlink = ifuse_unlink,
 	.rename = ifuse_rename,
+	.utimens = ifuse_utimens,
 	.fsync = ifuse_fsync,
 	.release = ifuse_release,
 	.init = ifuse_init_normal,

@@ -59,6 +59,7 @@ enum {
 	KEY_VERSION,
 	KEY_ROOT,
 	KEY_UUID,
+	KEY_UUID_LONG,
 	KEY_DEBUG
 };
 
@@ -67,7 +68,8 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("-h",             KEY_HELP),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
-	FUSE_OPT_KEY("--uuid=",        KEY_UUID),
+	FUSE_OPT_KEY("-u %s",          KEY_UUID),
+	FUSE_OPT_KEY("--uuid %s",      KEY_UUID_LONG),
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG),
 	FUSE_OPT_END
@@ -617,8 +619,12 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	int res = 1;
 
 	switch (key) {
+	case KEY_UUID_LONG:
+		opts.device_uuid = strdup(arg+6);
+		res = 0;
+		break;
 	case KEY_UUID:
-		opts.device_uuid = strdup(arg+7);
+		opts.device_uuid = strdup(arg+2);
 		res = 0;
 		break;
 	case KEY_DEBUG:

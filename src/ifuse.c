@@ -671,7 +671,6 @@ int main(int argc, char *argv[])
 	if (fuse_opt_parse(&args, NULL, ifuse_opts, ifuse_opt_proc) == -1) {
 		return -1;
 	}
-	fuse_opt_add_arg(&args, "-oallow_other");
 
 	if (!opts.mount_point) {
 		fprintf(stderr, "ERROR: No mount point specified\n");

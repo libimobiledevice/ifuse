@@ -664,6 +664,7 @@ int main(int argc, char *argv[])
 	char **ammended_argv;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	struct stat mst;
+	lockdownd_error_t ret = LOCKDOWN_E_SUCCESS;
 
 	memset(&opts, 0, sizeof(opts));
 
@@ -698,11 +699,18 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
 		return 0;
 	}
-
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &control, "ifuse")) {
+	
+	ret = lockdownd_client_new_with_handshake(phone, &control, "ifuse");
+	if (ret != LOCKDOWN_E_SUCCESS) {
 		iphone_device_free(phone);
-		fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
-		fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");
+		if (ret == LOCKDOWN_E_PASSWORD_PROTECTED) {
+			fprintf(stderr, "Please disable the password protection on your device and try again.\n");
+			fprintf(stderr, "The device does not allow pairing as long as a password has been set.\n");
+			fprintf(stderr, "You can enable it again after the connection succeeded.\n");
+		} else {
+			fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
+			fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");
+		}
 		return 0;
 	}
 

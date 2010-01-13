@@ -368,7 +368,7 @@ static int ifuse_release(const char *path, struct fuse_file_info *fi)
 
 void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_name)
 {
-	int port = 0;
+	uint16_t port = 0;
 	afc_client_t afc = NULL;
 
 	conn->async_read = 0;
@@ -628,7 +628,6 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		res = 0;
 		break;
 	case KEY_DEBUG:
-		iphone_set_debug_mask(DBGMASK_ALL);
 		iphone_set_debug_level(1);
 		res = 0;
 		break;
@@ -700,7 +699,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new(phone, &control)) {
+	if (LOCKDOWN_E_SUCCESS != lockdownd_client_new_with_handshake(phone, &control, "ifuse")) {
 		iphone_device_free(phone);
 		fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
 		fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");

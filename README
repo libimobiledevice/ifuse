@@ -45,12 +45,18 @@ To unmount you do:
 	$ fusermount -u <mountpoint>
 
 
-By default, iFuse (via the AFC protocol) only gives access to the
-'/var/root/Media/' chroot on the iPhone (containing music/pictures). However,
-if the device has been jailedbroken, a full view of the iPhone's filesystem
-will be available using the following command when mounting 
+By default, iFuse (via the AFC protocol) gives access to the '/var/root/Media/'
+chroot on the iPhone (containing music/pictures). This is the right and safe 
+way to access the device. However, if the device has been jailbroken, a full
+view of the iPhone's filesystem might be available using the following command
+when mounting:
 
 	$ ifuse --root <mountpoint>
+
+Note that only PwnageTool and older jailbreak software installs the necessary
+AFC2 service on the device to enable root filesystem usage. For instance 
+blackra1n does not install it and thus does not enable root filesystem access!
+Use with care as the AFC protocol was not made to access the root filesystem.
 
 Addtional help can be shown using:
 
@@ -74,17 +80,17 @@ in for the group change to become visible.
 == Who/what/where? ==
 
 wiki:
-	http://matt.colyer.name/projects/iphone-linux/index.php?title=Main_Page
+	http://matt.colyer.name/projects/iphone-linux/
 
 code:
 	git clone git://github.com/MattColyer/ifuse.git
 
 tickets:
-	http://libiphone.lighthouseapp.com/projects/27916-libiphone/tickets?q=all
+	http://libiphone.lighthouseapp.com/
 
 mailing list:
 	http://lists.mattcolyer.com/listinfo.cgi/iphone-linux-dev-mattcolyer.com
 
 updated:
-	2009-09-13
+	2010-01-21
 

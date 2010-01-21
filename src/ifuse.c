@@ -35,6 +35,9 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#define AFC_SERVICE_NAME "com.apple.afc"
+#define AFC2_SERVICE_NAME "com.apple.afc2"
+
 typedef uint32_t uint32;		// this annoys me too
 
 #include <libiphone/libiphone.h>
@@ -52,6 +55,8 @@ int debug = 0;
 static struct {
 	char *mount_point;
 	char *device_uuid;
+	char *service_name;
+	uint16_t port;
 } opts;
 
 enum {
@@ -366,21 +371,13 @@ static int ifuse_release(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-void *ifuse_init_with_service(struct fuse_conn_info *conn, const char *service_name)
+void *ifuse_init(struct fuse_conn_info *conn)
 {
-	uint16_t port = 0;
 	afc_client_t afc = NULL;
 
 	conn->async_read = 0;
 
-	if (LOCKDOWN_E_SUCCESS == lockdownd_start_service(control, service_name, &port) && !port) {
-		lockdownd_client_free(control);
-		iphone_device_free(phone);
-		fprintf(stderr, "Something went wrong when starting AFC.");
-		return NULL;
-	}
-
-	afc_client_new(phone, port, &afc);
+	afc_client_new(phone, opts.port, &afc);
 
 	lockdownd_client_free(control);
 	control = NULL;
@@ -560,16 +557,6 @@ int ifuse_mkdir(const char *dir, mode_t ignored)
 	return -get_afc_error_as_errno(err);
 }
 
-void *ifuse_init_normal(struct fuse_conn_info *conn)
-{
-	return ifuse_init_with_service(conn, "com.apple.afc");
-}
-
-void *ifuse_init_jailbroken(struct fuse_conn_info *conn)
-{
-	return ifuse_init_with_service(conn, "com.apple.afc2");
-}
-
 static struct fuse_operations ifuse_oper = {
 	.getattr = ifuse_getattr,
 	.statfs = ifuse_statfs,
@@ -590,7 +577,7 @@ static struct fuse_operations ifuse_oper = {
 	.utimens = ifuse_utimens,
 	.fsync = ifuse_fsync,
 	.release = ifuse_release,
-	.init = ifuse_init_normal,
+	.init = ifuse_init,
 	.destroy = ifuse_cleanup
 };
 
@@ -632,7 +619,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		res = 0;
 		break;
 	case KEY_ROOT:
-		ifuse_oper.init = ifuse_init_jailbroken;
+		opts.service_name = AFC2_SERVICE_NAME;
 		res = 0;
 		break;
 	case KEY_HELP:
@@ -667,6 +654,7 @@ int main(int argc, char *argv[])
 	lockdownd_error_t ret = LOCKDOWN_E_SUCCESS;
 
 	memset(&opts, 0, sizeof(opts));
+	opts.service_name = AFC_SERVICE_NAME;
 
 	if (fuse_opt_parse(&args, NULL, ifuse_opts, ifuse_opt_proc) == -1) {
 		return -1;
@@ -710,6 +698,18 @@ int main(int argc, char *argv[])
 		} else {
 			fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
 			fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");
+		}
+		return 0;
+	}
+
+	if ((lockdownd_start_service(control, opts.service_name, &opts.port) != LOCKDOWN_E_SUCCESS) || !opts.port) {
+		lockdownd_client_free(control);
+		iphone_device_free(phone);
+		fprintf(stderr, "Failed to start AFC service '%s' on the device.\n", opts.service_name);
+		if (!strcmp(opts.service_name, AFC2_SERVICE_NAME)) {
+			fprintf(stderr, "This service enables access to the root filesystem of your device.\n");
+			fprintf(stderr, "Your device needs to be jailbroken and have this service installed.\n");
+			fprintf(stderr, "Note that PwnageTool installs it while blackra1n does not.\n");
 		}
 		return 0;
 	}

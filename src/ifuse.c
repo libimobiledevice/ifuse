@@ -38,8 +38,6 @@
 #define AFC_SERVICE_NAME "com.apple.afc"
 #define AFC2_SERVICE_NAME "com.apple.afc2"
 
-typedef uint32_t uint32;		// this annoys me too
-
 #include <libiphone/libiphone.h>
 #include <libiphone/lockdown.h>
 #include <libiphone/afc.h>

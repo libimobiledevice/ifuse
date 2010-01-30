@@ -38,14 +38,14 @@
 #define AFC_SERVICE_NAME "com.apple.afc"
 #define AFC2_SERVICE_NAME "com.apple.afc2"
 
-#include <libiphone/libiphone.h>
-#include <libiphone/lockdown.h>
-#include <libiphone/afc.h>
+#include <libimobiledevice/libimobiledevice.h>
+#include <libimobiledevice/lockdown.h>
+#include <libimobiledevice/afc.h>
 
 /* assume this is the default block size */
 int g_blocksize = 4096;
 
-iphone_device_t phone = NULL;
+idevice_t phone = NULL;
 lockdownd_client_t control = NULL;
 
 int debug = 0;
@@ -406,7 +406,7 @@ void ifuse_cleanup(void *data)
 	if (control) {
 		lockdownd_client_free(control);
 	}
-	iphone_device_free(phone);
+	idevice_free(phone);
 }
 
 int ifuse_flush(const char *path, struct fuse_file_info *fi)
@@ -588,7 +588,7 @@ static void print_usage()
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
-	fprintf(stderr, "  --debug\t\tenable libiphone communication debugging\n");
+	fprintf(stderr, "  --debug\t\tenable libimobiledevice communication debugging\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Example:\n\n");
 	fprintf(stderr, "  $ ifuse /media/iPhone --root\n\n");
@@ -613,7 +613,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		res = 0;
 		break;
 	case KEY_DEBUG:
-		iphone_set_debug_level(1);
+		idevice_set_debug_level(1);
 		res = 0;
 		break;
 	case KEY_ROOT:
@@ -678,7 +678,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	iphone_device_new(&phone, opts.device_uuid ? opts.device_uuid : NULL);
+	idevice_new(&phone, opts.device_uuid ? opts.device_uuid : NULL);
 	if (!phone) {
 		fprintf(stderr, "No device found, is it connected?\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");
@@ -688,7 +688,7 @@ int main(int argc, char *argv[])
 	
 	ret = lockdownd_client_new_with_handshake(phone, &control, "ifuse");
 	if (ret != LOCKDOWN_E_SUCCESS) {
-		iphone_device_free(phone);
+		idevice_free(phone);
 		if (ret == LOCKDOWN_E_PASSWORD_PROTECTED) {
 			fprintf(stderr, "Please disable the password protection on your device and try again.\n");
 			fprintf(stderr, "The device does not allow pairing as long as a password has been set.\n");
@@ -702,7 +702,7 @@ int main(int argc, char *argv[])
 
 	if ((lockdownd_start_service(control, opts.service_name, &opts.port) != LOCKDOWN_E_SUCCESS) || !opts.port) {
 		lockdownd_client_free(control);
-		iphone_device_free(phone);
+		idevice_free(phone);
 		fprintf(stderr, "Failed to start AFC service '%s' on the device.\n", opts.service_name);
 		if (!strcmp(opts.service_name, AFC2_SERVICE_NAME)) {
 			fprintf(stderr, "This service enables access to the root filesystem of your device.\n");

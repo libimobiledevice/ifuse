@@ -622,10 +622,10 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		break;
 	case KEY_HELP:
 		print_usage();
-		exit(1);
+		exit(EXIT_SUCCESS);
 	case KEY_VERSION:
 		fprintf(stderr, "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
-		exit(0);
+		exit(EXIT_SUCCESS);
 	case FUSE_OPT_KEY_OPT:
 		/* ignore other options and pass them to fuse_main later */
 		break;
@@ -655,27 +655,27 @@ int main(int argc, char *argv[])
 	opts.service_name = AFC_SERVICE_NAME;
 
 	if (fuse_opt_parse(&args, NULL, ifuse_opts, ifuse_opt_proc) == -1) {
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if (!opts.mount_point) {
 		fprintf(stderr, "ERROR: No mount point specified\n");
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if (opts.device_uuid && strlen(opts.device_uuid) != 40) {
 		fprintf(stderr, "Invalid device UUID specified, length needs to be 40 characters\n");
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	if (stat(opts.mount_point, &mst) < 0) {
 		if (errno == ENOENT) {
 			fprintf(stderr, "ERROR: the mount point specified does not exist\n");
-			return -1;
+			return EXIT_FAILURE;
 		}
 		
 		fprintf(stderr, "There was an error accessing the mount point: %s\n", strerror(errno));
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	idevice_new(&phone, opts.device_uuid ? opts.device_uuid : NULL);
@@ -683,7 +683,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "No device found, is it connected?\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");
 		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
 	ret = lockdownd_client_new_with_handshake(phone, &control, "ifuse");
@@ -697,7 +697,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
 			fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");
 		}
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	if ((lockdownd_start_service(control, opts.service_name, &opts.port) != LOCKDOWN_E_SUCCESS) || !opts.port) {
@@ -709,7 +709,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Your device needs to be jailbroken and have this service installed.\n");
 			fprintf(stderr, "Note that PwnageTool installs it while blackra1n does not.\n");
 		}
-		return 0;
+		return EXIT_FAILURE;
 	}
 
 	return fuse_main(args.argc, args.argv, &ifuse_oper, NULL);

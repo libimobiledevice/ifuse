@@ -2,10 +2,10 @@ INSTALLATION
 ================================================================================
 
 For:
-	Apple iPhone/iPod Touch + iPod USB cable
+	Apple iPhone/iPod Touch/iPad + iPod USB cable
 
 You must have:
-	libiphone 
+	libimobiledevice
 	libfuse-dev (and the associated kernel modules)
 	libglib2.0-dev
 	make
@@ -24,7 +24,7 @@ On Ubuntu/Debian, you can do:
 	sudo apt-get install build-essential automake autoconf \
           libfuse-dev libglib2.0-dev
 
-(make sure that you have compiled libiphone first)
+(make sure that you have compiled libimobiledevice first)
 
 
 USAGE
@@ -46,9 +46,9 @@ To unmount you do:
 
 
 By default, iFuse (via the AFC protocol) gives access to the '/var/root/Media/'
-chroot on the iPhone (containing music/pictures). This is the right and safe 
+chroot on the device (containing music/pictures). This is the right and safe 
 way to access the device. However, if the device has been jailbroken, a full
-view of the iPhone's filesystem might be available using the following command
+view of the device's filesystem might be available using the following command
 when mounting:
 
 	$ ifuse --root <mountpoint>
@@ -79,25 +79,25 @@ in for the group change to become visible.
 
 == Who/what/where? ==
 
-wiki:
-	http://matt.colyer.name/projects/iphone-linux/
+web:
+	http://libimobiledevice.org
 
 code:
-	git clone git://github.com/MattColyer/ifuse.git
+	git clone git://cgit.sukimashita.com/ifuse.git/
 
 tickets:
 	http://libiphone.lighthouseapp.com/
 
 mailing list:
-	http://lists.mattcolyer.com/listinfo.cgi/iphone-linux-dev-mattcolyer.com
+	http://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
 
 Credits
 =======
 
-Apple, iPhone, iPod, and iPod Touch are trademarks of Apple Inc.
+Apple, iPhone, iPod, iPad, and iPod Touch are trademarks of Apple Inc.
 ifuse is an independent software program and has not been
 authorized, sponsored, or otherwise approved by Apple Inc.
 
 README updated on:
-	2010-01-30
+	2010-04-22
 

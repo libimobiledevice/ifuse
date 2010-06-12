@@ -42,6 +42,11 @@
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/afc.h>
 
+/* FreeBSD and others don't have ENODATA, so let's fake it */
+#ifndef ENODATA
+#define ENODATA EIO
+#endif
+
 /* assume this is the default block size */
 int g_blocksize = 4096;
 

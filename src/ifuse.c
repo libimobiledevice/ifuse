@@ -37,15 +37,19 @@
 
 #define AFC_SERVICE_NAME "com.apple.afc"
 #define AFC2_SERVICE_NAME "com.apple.afc2"
+#define HOUSE_ARREST_SERVICE_NAME "com.apple.mobile.house_arrest"
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/afc.h>
+#include <libimobiledevice/house_arrest.h>
 
 /* FreeBSD and others don't have ENODATA, so let's fake it */
 #ifndef ENODATA
 #define ENODATA EIO
 #endif
+
+house_arrest_client_t house_arrest = NULL;
 
 /* assume this is the default block size */
 int g_blocksize = 4096;
@@ -58,6 +62,7 @@ int debug = 0;
 static struct {
 	char *mount_point;
 	char *device_uuid;
+	char *appid;
 	char *service_name;
 	uint16_t port;
 } opts;
@@ -68,6 +73,8 @@ enum {
 	KEY_ROOT,
 	KEY_UUID,
 	KEY_UUID_LONG,
+	KEY_APPID,
+	KEY_APPID_LONG,
 	KEY_DEBUG
 };
 
@@ -80,6 +87,8 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("--uuid %s",      KEY_UUID_LONG),
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG),
+	FUSE_OPT_KEY("-a %s",          KEY_APPID),
+	FUSE_OPT_KEY("--appid %s",     KEY_APPID_LONG),
 	FUSE_OPT_END
 };
 
@@ -380,7 +389,11 @@ void *ifuse_init(struct fuse_conn_info *conn)
 
 	conn->async_read = 0;
 
-	afc_client_new(phone, opts.port, &afc);
+	if (house_arrest) {
+		afc_client_new_from_house_arrest_client(house_arrest, &afc);
+	} else { 
+		afc_client_new(phone, opts.port, &afc);
+	}
 
 	lockdownd_client_free(control);
 	control = NULL;
@@ -592,6 +605,7 @@ static void print_usage()
 	fprintf(stderr, "  -u, --uuid UUID\tmount specific device by its 40-digit device UUID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
+	fprintf(stderr, "  --appid APPID\t\tmount 'Documents' folder of app identified by APPID\n");
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "  --debug\t\tenable libimobiledevice communication debugging\n");
 	fprintf(stderr, "\n");
@@ -615,6 +629,16 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		break;
 	case KEY_UUID:
 		opts.device_uuid = strdup(arg+2);
+		res = 0;
+		break;
+	case KEY_APPID_LONG:
+		opts.appid = strdup(arg+7);
+		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
+		res = 0;
+		break;
+	case KEY_APPID:
+		opts.appid = strdup(arg+2);
+		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
 		res = 0;
 		break;
 	case KEY_DEBUG:
@@ -651,6 +675,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 
 int main(int argc, char *argv[])
 {
+	int res = EXIT_FAILURE;
 	char **ammended_argv;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	struct stat mst;
@@ -717,5 +742,42 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	return fuse_main(args.argc, args.argv, &ifuse_oper, NULL);
+	if (!strcmp(opts.service_name, HOUSE_ARREST_SERVICE_NAME)) {
+		house_arrest_client_new(phone, opts.port, &house_arrest);
+		if (!house_arrest) {
+			fprintf(stderr, "Could not start house_arrest service!\n");
+			return EXIT_FAILURE;
+		}
+		if (house_arrest_send_command(house_arrest, "VendDocuments", opts.appid) != HOUSE_ARREST_E_SUCCESS) {
+			fprintf(stderr, "Could not send VendDocuments command!\n");
+			goto leave_err;
+		}
+
+		plist_t dict = NULL;
+		if (house_arrest_get_result(house_arrest, &dict) != HOUSE_ARREST_E_SUCCESS) {
+			fprintf(stderr, "Could not get result from house_arrest service!\n");
+			goto leave_err;
+		}
+		plist_t node = plist_dict_get_item(dict, "Error");
+		if (node) {
+			char *str = NULL;
+			plist_get_string_val(node, &str);
+			fprintf(stderr, "ERROR: %s\n", str);
+			if (str) free(str);
+			goto leave_err;
+		}
+		plist_free(dict);
+
+		fuse_opt_add_arg(&args, "-omodules=subdir");
+		fuse_opt_add_arg(&args, "-osubdir=Documents");
+	}
+
+	res = fuse_main(args.argc, args.argv, &ifuse_oper, NULL);
+
+leave_err:
+	if (house_arrest) {
+		house_arrest_client_free(house_arrest);
+	}
+
+	return res;
 }

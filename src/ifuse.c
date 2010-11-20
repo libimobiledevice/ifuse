@@ -748,8 +748,8 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Could not start house_arrest service!\n");
 			return EXIT_FAILURE;
 		}
-		if (house_arrest_send_command(house_arrest, "VendDocuments", opts.appid) != HOUSE_ARREST_E_SUCCESS) {
-			fprintf(stderr, "Could not send VendDocuments command!\n");
+		if (house_arrest_send_command(house_arrest, "VendContainer", opts.appid) != HOUSE_ARREST_E_SUCCESS) {
+			fprintf(stderr, "Could not send VendContainer command!\n");
 			goto leave_err;
 		}
 

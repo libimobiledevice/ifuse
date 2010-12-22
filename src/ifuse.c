@@ -37,7 +37,9 @@
 
 #define AFC_SERVICE_NAME "com.apple.afc"
 #define AFC2_SERVICE_NAME "com.apple.afc2"
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 #define HOUSE_ARREST_SERVICE_NAME "com.apple.mobile.house_arrest"
+#endif
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
@@ -62,7 +64,9 @@ int debug = 0;
 static struct {
 	char *mount_point;
 	char *device_uuid;
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	char *appid;
+#endif
 	char *service_name;
 	uint16_t port;
 } opts;
@@ -87,8 +91,10 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("--uuid %s",      KEY_UUID_LONG),
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG),
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	FUSE_OPT_KEY("-a %s",          KEY_APPID),
 	FUSE_OPT_KEY("--appid %s",     KEY_APPID_LONG),
+#endif
 	FUSE_OPT_END
 };
 
@@ -605,7 +611,9 @@ static void print_usage()
 	fprintf(stderr, "  -u, --uuid UUID\tmount specific device by its 40-digit device UUID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	fprintf(stderr, "  --appid APPID\t\tmount 'Documents' folder of app identified by APPID\n");
+#endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "  --debug\t\tenable libimobiledevice communication debugging\n");
 	fprintf(stderr, "\n");
@@ -631,6 +639,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		opts.device_uuid = strdup(arg+2);
 		res = 0;
 		break;
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	case KEY_APPID_LONG:
 		opts.appid = strdup(arg+7);
 		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
@@ -641,6 +650,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
 		res = 0;
 		break;
+#endif
 	case KEY_DEBUG:
 		idevice_set_debug_level(1);
 		res = 0;
@@ -742,6 +752,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	if (!strcmp(opts.service_name, HOUSE_ARREST_SERVICE_NAME)) {
 		house_arrest_client_new(phone, opts.port, &house_arrest);
 		if (!house_arrest) {
@@ -771,13 +782,14 @@ int main(int argc, char *argv[])
 		fuse_opt_add_arg(&args, "-omodules=subdir");
 		fuse_opt_add_arg(&args, "-osubdir=Documents");
 	}
-
+#endif
 	res = fuse_main(args.argc, args.argv, &ifuse_oper, NULL);
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 leave_err:
 	if (house_arrest) {
 		house_arrest_client_free(house_arrest);
 	}
-
+#endif
 	return res;
 }

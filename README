@@ -2,7 +2,7 @@ INSTALLATION
 ================================================================================
 
 For:
-	Apple iPhone/iPod Touch/iPad + iPod USB cable
+	Apple iPhone, iPod Touch, iPad and Apple TV devices
 
 You must have:
 	libimobiledevice
@@ -44,7 +44,6 @@ Note:
 To unmount you do:
 	$ fusermount -u <mountpoint>
 
-
 By default, iFuse (via the AFC protocol) gives access to the '/var/root/Media/'
 chroot on the device (containing music/pictures). This is the right and safe 
 way to access the device. However, if the device has been jailbroken, a full
@@ -57,6 +56,17 @@ Note that only PwnageTool and older jailbreak software installs the necessary
 AFC2 service on the device to enable root filesystem usage. For instance 
 blackra1n does not install it and thus does not enable root filesystem access!
 Use with care as the AFC protocol was not made to access the root filesystem.
+
+If using libimobiledevice >= 1.1.0, ifuse can be used with the iTunes
+file/document sharing feature. It allows you to exchange files with an
+application on the device direclty through it's documents folder by specifing
+the application identifier like this:
+
+	$ ifuse --appid <appid> <mountpoint>
+
+The following example mounts the documents folder of the VLC app to /mnt:
+
+	$ ifuse --appid com.appladium.vlc /mnt
 
 Addtional help can be shown using:
 
@@ -94,10 +104,10 @@ mailing list:
 Credits
 =======
 
-Apple, iPhone, iPod, iPad, and iPod Touch are trademarks of Apple Inc.
+Apple, iPhone, iPod, iPad, Apple TV and iPod Touch are trademarks of Apple Inc.
 ifuse is an independent software program and has not been
 authorized, sponsored, or otherwise approved by Apple Inc.
 
 README updated on:
-	2010-04-22
+	2011-01-09
 

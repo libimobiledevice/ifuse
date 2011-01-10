@@ -606,7 +606,7 @@ static struct fuse_operations ifuse_oper = {
 static void print_usage()
 {
 	fprintf(stderr, "Usage: ifuse <mount_point> [OPTIONS]\n");
-	fprintf(stderr, "Mount filesystem of an iPhone/iPod Touch/iPad.\n\n");
+	fprintf(stderr, "Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV.\n\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
 	fprintf(stderr, "  -u, --uuid UUID\tmount specific device by its 40-digit device UUID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
@@ -746,8 +746,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Failed to start AFC service '%s' on the device.\n", opts.service_name);
 		if (!strcmp(opts.service_name, AFC2_SERVICE_NAME)) {
 			fprintf(stderr, "This service enables access to the root filesystem of your device.\n");
-			fprintf(stderr, "Your device needs to be jailbroken and have this service installed.\n");
-			fprintf(stderr, "Note that PwnageTool installs it while blackra1n does not.\n");
+			fprintf(stderr, "Your device needs to be jailbroken and have the AFC2 service installed.\n");
 		}
 		return EXIT_FAILURE;
 	}
@@ -756,7 +755,7 @@ int main(int argc, char *argv[])
 	if (!strcmp(opts.service_name, HOUSE_ARREST_SERVICE_NAME)) {
 		house_arrest_client_new(phone, opts.port, &house_arrest);
 		if (!house_arrest) {
-			fprintf(stderr, "Could not start house_arrest service!\n");
+			fprintf(stderr, "Could not start document sharing service!\n");
 			return EXIT_FAILURE;
 		}
 		if (house_arrest_send_command(house_arrest, "VendContainer", opts.appid) != HOUSE_ARREST_E_SUCCESS) {
@@ -766,7 +765,7 @@ int main(int argc, char *argv[])
 
 		plist_t dict = NULL;
 		if (house_arrest_get_result(house_arrest, &dict) != HOUSE_ARREST_E_SUCCESS) {
-			fprintf(stderr, "Could not get result from house_arrest service!\n");
+			fprintf(stderr, "Could not get result from document sharing service!\n");
 			goto leave_err;
 		}
 		plist_t node = plist_dict_get_item(dict, "Error");

@@ -17,6 +17,7 @@ PKG_CHECK_MODULES(libimobiledevice11, libimobiledevice-1.0 >= 1.1.0, libimobiled
 if test x"$libimobiledevice_1_1" = xyes; then
   AC_DEFINE([HAVE_LIBIMOBILEDEVICE_1_1], 1, [Define if libimobiledevice is using 1.1.0 API])
 fi
+libimobiledevice_VERSION=`$PKG_CONFIG --modversion "libimobiledevice-1.0" 2>&1`
 PKG_CHECK_MODULES(libglib2, glib-2.0 >= 2.14.1)
 PKG_CHECK_MODULES(libgthread2, gthread-2.0 >= 2.14.1)
 PKG_CHECK_MODULES(libfuse, fuse >= 2.7.0)
@@ -39,3 +40,14 @@ AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
 AC_OUTPUT(Makefile src/Makefile)
+
+echo "
+Configuration for $PACKAGE $VERSION:
+-------------------------------------------
+
+  Install prefix ..........: $prefix
+  libimobiledevice API ....: $libimobiledevice_VERSION
+
+  Now type 'make' to build $PACKAGE $VERSION,
+  and then 'make install' for installation.
+"

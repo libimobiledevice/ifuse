@@ -291,7 +291,6 @@ static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 
 static int ifuse_open(const char *path, struct fuse_file_info *fi)
 {
-	int i;
 	afc_client_t afc = fuse_get_context()->private_data;
 	afc_error_t err;
 	afc_file_mode_t mode = 0;
@@ -634,7 +633,6 @@ static void print_usage()
 
 static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)
 {
-	char *tmp;
 	static int option_num = 0;
 	int res = 1;
 
@@ -694,7 +692,6 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 int main(int argc, char *argv[])
 {
 	int res = EXIT_FAILURE;
-	char **ammended_argv;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	struct stat mst;
 	lockdownd_error_t ret = LOCKDOWN_E_SUCCESS;

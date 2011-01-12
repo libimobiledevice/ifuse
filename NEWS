@@ -1,0 +1,71 @@
+Version 1.1.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Add "house_arrest" support when compiled with libimobiledevice >= 1.1.0
+  - Add --appid option for document/filesharing using "house_arrest" service
+  - FreeBSD doesn't have ENODATA, so fake it as EIO
+  - Make COPYING contain correct license
+  - Add NEWS file and update README
+  - Minor bugfixes
+
+Version 1.0.0
+~~~~~~~~~~~~~
+
+* Changes:
+  - Return correct exit codes
+  - Adopt code from libiphone API to the libimobiledevice API
+  - Add trademark and disclaimer to README
+
+Version 0.9.6 (RC1)
+~~~~~~~~~~~~~~~~~~~
+
+* Changes:
+  - Port to libiphone 0.9.6 API
+  - Report error if a passcode is set on the device
+  - Remove hardcoded "allow_other" fuse argument
+
+Version 0.9.5
+~~~~~~~~~~~~~
+
+* Changes:
+  - Support for file modification times with iOS 3.1+
+
+Version 0.9.4
+~~~~~~~~~~~~~
+
+* Changes:
+  - Remove obsolete HAL fdi rules
+  - Rename binary to "ifuse" again
+  - Allow mounting a specific device using UUID option
+
+Version 0.9.3
+~~~~~~~~~~~~~
+
+* Changes:
+  - Fix deletion of non empty directories (recursive delete)
+
+Version 0.9.2
+~~~~~~~~~~~~~
+
+* Changes:
+  - Add iPhone 3GS support
+  - Use file handles
+  - Add hard/symlink support for AFC
+  - Added --debug option
+  - Improve error messages
+
+Version 0.9.1
+~~~~~~~~~~~~~
+
+* Changes:
+  - A bunch of autotools fixes
+
+Version 0.9.0
+~~~~~~~~~~~~~
+
+* First public release
+* Changes:
+  - AFC and AFC2 filesystem access
+  - Correctly handle file modes
+

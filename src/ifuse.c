@@ -316,7 +316,7 @@ static int ifuse_create(const char *path, mode_t mode, struct fuse_file_info *fi
 
 static int ifuse_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-	int bytes = 0;
+	uint32_t bytes = 0;
 	afc_client_t afc = fuse_get_context()->private_data;
 
 	if (size == 0)
@@ -339,7 +339,7 @@ static int ifuse_read(const char *path, char *buf, size_t size, off_t offset, st
 
 static int ifuse_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
-	int bytes = 0;
+	uint32_t bytes = 0;
 	afc_client_t afc = fuse_get_context()->private_data;
 
 	if (size == 0)

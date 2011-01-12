@@ -1,3 +1,9 @@
+Version 1.1.1
+~~~~~~~~~~~~~
+
+* Changes:
+  - Fix compilation without "house_arrest" support
+
 Version 1.1.0
 ~~~~~~~~~~~~~
 

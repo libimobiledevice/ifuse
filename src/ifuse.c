@@ -44,14 +44,18 @@
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/afc.h>
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 #include <libimobiledevice/house_arrest.h>
+#endif
 
 /* FreeBSD and others don't have ENODATA, so let's fake it */
 #ifndef ENODATA
 #define ENODATA EIO
 #endif
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 house_arrest_client_t house_arrest = NULL;
+#endif
 
 /* assume this is the default block size */
 int g_blocksize = 4096;
@@ -395,11 +399,15 @@ void *ifuse_init(struct fuse_conn_info *conn)
 
 	conn->async_read = 0;
 
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	if (house_arrest) {
 		afc_client_new_from_house_arrest_client(house_arrest, &afc);
 	} else { 
+#endif
 		afc_client_new(phone, opts.port, &afc);
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	}
+#endif
 
 	lockdownd_client_free(control);
 	control = NULL;

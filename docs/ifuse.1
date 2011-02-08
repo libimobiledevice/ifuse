@@ -1,0 +1,45 @@
+.TH "ifuse" 1
+.SH NAME
+ifuse \- Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV.
+.SH SYNOPSIS
+.B ifuse <mount_point> [OPTIONS]
+
+.SH DESCRIPTION
+
+Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV
+
+Example:
+
+ifuse /media/iPhone \-\-root
+
+This mounts the root filesystem of the first attached device on
+this computer in the directory /media/iPhone.
+
+
+.SH OPTIONS
+.TP
+.B \-o opt,[opt...] 
+mount options.
+.TP
+.B \-u|\-\-uuid UUID
+mount specific device by its 40-digit device UUID.
+.TP
+.B \-h|\-\-help
+prints usage information.
+.TP
+.B \-V|\-\-version
+print version.
+.TP
+.B \-\-appid APPID
+mount 'Documents' folder of app identified by APPID.
+.TP
+.B \-\-root 
+mount root file system (jailbroken device required).
+.TP
+.B \-\-debug
+enable libimobiledevice communication debugging.
+
+.SH AUTHOR
+Matt Colyer
+
+Man page written to conform with Debian by Julien Lavergne.

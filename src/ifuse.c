@@ -66,7 +66,7 @@ int debug = 0;
 
 static struct {
 	char *mount_point;
-	char *device_uuid;
+	char *device_udid;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	char *appid;
 #endif
@@ -78,8 +78,8 @@ enum {
 	KEY_HELP = 1,
 	KEY_VERSION,
 	KEY_ROOT,
-	KEY_UUID,
-	KEY_UUID_LONG,
+	KEY_UDID,
+	KEY_UDID_LONG,
 	KEY_APPID,
 	KEY_APPID_LONG,
 	KEY_DEBUG
@@ -90,8 +90,8 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("--version",      KEY_VERSION),
 	FUSE_OPT_KEY("-h",             KEY_HELP),
 	FUSE_OPT_KEY("--help",         KEY_HELP),
-	FUSE_OPT_KEY("-u %s",          KEY_UUID),
-	FUSE_OPT_KEY("--uuid %s",      KEY_UUID_LONG),
+	FUSE_OPT_KEY("-u %s",          KEY_UDID),
+	FUSE_OPT_KEY("--udid %s",      KEY_UDID_LONG),
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG),
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
@@ -614,7 +614,7 @@ static void print_usage()
 	fprintf(stderr, "Usage: ifuse <mount_point> [OPTIONS]\n");
 	fprintf(stderr, "Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV.\n\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
-	fprintf(stderr, "  -u, --uuid UUID\tmount specific device by its 40-digit device UUID\n");
+	fprintf(stderr, "  -u, --udid UDID\tmount specific device by its 40-digit device UDID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
@@ -636,12 +636,12 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	int res = 1;
 
 	switch (key) {
-	case KEY_UUID_LONG:
-		opts.device_uuid = strdup(arg+6);
+	case KEY_UDID_LONG:
+		opts.device_udid = strdup(arg+6);
 		res = 0;
 		break;
-	case KEY_UUID:
-		opts.device_uuid = strdup(arg+2);
+	case KEY_UDID:
+		opts.device_udid = strdup(arg+2);
 		res = 0;
 		break;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
@@ -707,8 +707,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (opts.device_uuid && strlen(opts.device_uuid) != 40) {
-		fprintf(stderr, "Invalid device UUID specified, length needs to be 40 characters\n");
+	if (opts.device_udid && strlen(opts.device_udid) != 40) {
+		fprintf(stderr, "Invalid device UDID specified, length needs to be 40 characters\n");
 		return EXIT_FAILURE;
 	}
 
@@ -722,7 +722,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	idevice_new(&phone, opts.device_uuid ? opts.device_uuid : NULL);
+	idevice_new(&phone, opts.device_udid ? opts.device_udid : NULL);
 	if (!phone) {
 		fprintf(stderr, "No device found, is it connected?\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");

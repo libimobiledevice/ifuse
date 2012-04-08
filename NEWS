@@ -1,3 +1,12 @@
+Version 1.1.2
+~~~~~~~~~~~~~
+
+* Changes:
+  - Add direct linking with libplist to fix build issues
+  - Add basic manpage
+  - Use UDID instead of UUID as it is the correct term for it
+  - Remove obsolete glib and gthread dependencies
+
 Version 1.1.1
 ~~~~~~~~~~~~~
 

@@ -18,8 +18,6 @@ if test x"$libimobiledevice_1_1" = xyes; then
   AC_DEFINE([HAVE_LIBIMOBILEDEVICE_1_1], 1, [Define if libimobiledevice is using 1.1.0 API])
 fi
 libimobiledevice_VERSION=`$PKG_CONFIG --modversion "libimobiledevice-1.0" 2>&1`
-PKG_CHECK_MODULES(libglib2, glib-2.0 >= 2.14.1)
-PKG_CHECK_MODULES(libgthread2, gthread-2.0 >= 2.14.1)
 PKG_CHECK_MODULES(libfuse, fuse >= 2.7.0)
 PKG_CHECK_MODULES(libplist, libplist)
 

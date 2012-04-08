@@ -1,5 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
-SUBDIRS = src
+SUBDIRS = docs src
 
 DISTCHECK_CONFIGURE_FLAGS = --disable-root-sbin
 

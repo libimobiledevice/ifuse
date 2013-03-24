@@ -71,7 +71,11 @@ static struct {
 	char *appid;
 #endif
 	char *service_name;
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+	lockdownd_service_descriptor_t service;
+#else
 	uint16_t port;
+#endif
 } opts;
 
 enum {
@@ -402,7 +406,11 @@ void *ifuse_init(struct fuse_conn_info *conn)
 		afc_client_new_from_house_arrest_client(house_arrest, &afc);
 	} else { 
 #endif
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+		afc_client_new(phone, opts.service, &afc);
+#else
 		afc_client_new(phone, opts.port, &afc);
+#endif
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	}
 #endif
@@ -744,7 +752,13 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if ((lockdownd_start_service(control, opts.service_name, &opts.port) != LOCKDOWN_E_SUCCESS) || !opts.port) {
+	if (
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+	(lockdownd_start_service(control, opts.service_name, &opts.service) != LOCKDOWN_E_SUCCESS) || !opts.service
+#else
+	(lockdownd_start_service(control, opts.service_name, &opts.port) != LOCKDOWN_E_SUCCESS) || !opts.port
+#endif
+ 	) {
 		lockdownd_client_free(control);
 		idevice_free(phone);
 		fprintf(stderr, "Failed to start AFC service '%s' on the device.\n", opts.service_name);
@@ -757,7 +771,11 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	if (!strcmp(opts.service_name, HOUSE_ARREST_SERVICE_NAME)) {
+#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
+		house_arrest_client_new(phone, opts.service, &house_arrest);
+#else
 		house_arrest_client_new(phone, opts.port, &house_arrest);
+#endif
 		if (!house_arrest) {
 			fprintf(stderr, "Could not start document sharing service!\n");
 			return EXIT_FAILURE;

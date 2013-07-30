@@ -66,7 +66,7 @@ the application identifier like this:
 
 The following example mounts the documents folder of the VLC app to /mnt:
 
-	$ ifuse --appid com.appladium.vlc /mnt
+	$ ifuse --appid org.videolan.vlc-ios /mnt
 
 Addtional help can be shown using:
 

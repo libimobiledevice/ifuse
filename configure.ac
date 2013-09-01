@@ -17,7 +17,7 @@ PKG_CHECK_MODULES(libimobiledevice11, libimobiledevice-1.0 >= 1.1.0, libimobiled
 if test x"$libimobiledevice_1_1" = xyes; then
   AC_DEFINE([HAVE_LIBIMOBILEDEVICE_1_1], 1, [Define if libimobiledevice is using 1.1.0 API])
 fi
-PKG_CHECK_MODULES(libimobiledevice11, libimobiledevice-1.0 >= 1.1.5, libimobiledevice_1_1_5=yes, libimobiledevice_1_1_5=no)
+PKG_CHECK_MODULES(libimobiledevice15, libimobiledevice-1.0 >= 1.1.5, libimobiledevice_1_1_5=yes, libimobiledevice_1_1_5=no)
 if test x"$libimobiledevice_1_1_5" = xyes; then
   AC_DEFINE([HAVE_LIBIMOBILEDEVICE_1_1_5], 1, [Define if libimobiledevice is using 1.1.5 API])
 fi

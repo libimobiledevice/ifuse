@@ -799,9 +799,6 @@ int main(int argc, char *argv[])
 			goto leave_err;
 		}
 		plist_free(dict);
-
-		fuse_opt_add_arg(&args, "-omodules=subdir");
-		fuse_opt_add_arg(&args, "-osubdir=Documents");
 	}
 #endif
 	res = fuse_main(args.argc, args.argv, &ifuse_oper, NULL);

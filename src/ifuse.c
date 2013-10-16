@@ -626,7 +626,7 @@ static void print_usage()
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
-	fprintf(stderr, "  --appid APPID\t\tmount 'Documents' folder of app identified by APPID\n");
+	fprintf(stderr, "  --appid APPID\t\tmount sandboxed folders of app identified by APPID\n");
 #endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "  --debug\t\tenable libimobiledevice communication debugging\n");

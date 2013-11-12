@@ -684,7 +684,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		print_usage();
 		exit(EXIT_SUCCESS);
 	case KEY_VERSION:
-		fprintf(stderr, "%s version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
+		fprintf(stderr, "%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
 		exit(EXIT_SUCCESS);
 	case FUSE_OPT_KEY_OPT:
 		/* ignore other options and pass them to fuse_main later */

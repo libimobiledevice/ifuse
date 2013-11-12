@@ -626,8 +626,8 @@ static struct fuse_operations ifuse_oper = {
 
 static void print_usage()
 {
-	fprintf(stderr, "Usage: ifuse <mount_point> [OPTIONS]\n");
-	fprintf(stderr, "Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV.\n\n");
+	fprintf(stderr, "Usage: " PACKAGE_NAME " MOUNTPOINT [OPTIONS]\n");
+	fprintf(stderr, "Mount directories of an iOS device locally using fuse.\n\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
 	fprintf(stderr, "  -u, --udid UDID\tmount specific device by its 40-digit device UDID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");

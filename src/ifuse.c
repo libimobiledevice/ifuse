@@ -86,7 +86,8 @@ enum {
 	KEY_UDID_LONG,
 	KEY_APPID,
 	KEY_APPID_LONG,
-	KEY_DEBUG
+	KEY_DEBUG,
+	KEY_DEBUG_LONG
 };
 
 static struct fuse_opt ifuse_opts[] = {
@@ -97,7 +98,8 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("-u %s",          KEY_UDID),
 	FUSE_OPT_KEY("--udid %s",      KEY_UDID_LONG),
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
-	FUSE_OPT_KEY("--debug",        KEY_DEBUG),
+	FUSE_OPT_KEY("-d",             KEY_DEBUG),
+	FUSE_OPT_KEY("--debug",        KEY_DEBUG_LONG),
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	FUSE_OPT_KEY("-a %s",          KEY_APPID),
 	FUSE_OPT_KEY("--appid %s",     KEY_APPID_LONG),
@@ -630,11 +632,11 @@ static void print_usage()
 	fprintf(stderr, "  -u, --udid UDID\tmount specific device by its 40-digit device UDID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
+	fprintf(stderr, "  -d, --debug\t\tenable libimobiledevice communication debugging\n");
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	fprintf(stderr, "  --appid APPID\t\tmount 'Documents' folder of app identified by APPID\n");
 #endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
-	fprintf(stderr, "  --debug\t\tenable libimobiledevice communication debugging\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Example:\n\n");
 	fprintf(stderr, "  $ ifuse /media/iPhone --root\n\n");
@@ -670,6 +672,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		break;
 #endif
 	case KEY_DEBUG:
+	case KEY_DEBUG_LONG:
 		idevice_set_debug_level(1);
 		res = 0;
 		break;

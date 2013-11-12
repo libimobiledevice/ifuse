@@ -631,7 +631,7 @@ static void print_usage()
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
-	fprintf(stderr, "  --appid APPID\t\tmount 'Documents' folder of app identified by APPID\n");
+	fprintf(stderr, "  --appid APPID\t\tmount sandboxed folders of app identified by APPID\n");
 #endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "  --debug\t\tenable libimobiledevice communication debugging\n");
@@ -804,9 +804,6 @@ int main(int argc, char *argv[])
 			goto leave_err;
 		}
 		plist_free(dict);
-
-		fuse_opt_add_arg(&args, "-omodules=subdir");
-		fuse_opt_add_arg(&args, "-osubdir=Documents");
 	}
 #endif
 	res = fuse_main(args.argc, args.argv, &ifuse_oper, NULL);

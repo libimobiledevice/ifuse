@@ -69,6 +69,7 @@ static struct {
 	char *device_udid;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	char *appid;
+	int use_container;
 #endif
 	char *service_name;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
@@ -84,8 +85,8 @@ enum {
 	KEY_ROOT,
 	KEY_UDID,
 	KEY_UDID_LONG,
-	KEY_APPID,
-	KEY_APPID_LONG,
+	KEY_VENDOR_DOCUMENTS_LONG,
+	KEY_VENDOR_CONTAINER_LONG,
 	KEY_DEBUG,
 	KEY_DEBUG_LONG
 };
@@ -101,8 +102,8 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("-d",             KEY_DEBUG),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG_LONG),
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
-	FUSE_OPT_KEY("-a %s",          KEY_APPID),
-	FUSE_OPT_KEY("--appid %s",     KEY_APPID_LONG),
+	FUSE_OPT_KEY("--documents %s", KEY_VENDOR_DOCUMENTS_LONG),
+	FUSE_OPT_KEY("--container %s", KEY_VENDOR_CONTAINER_LONG),
 #endif
 	FUSE_OPT_END
 };
@@ -634,7 +635,8 @@ static void print_usage()
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 	fprintf(stderr, "  -d, --debug\t\tenable libimobiledevice communication debugging\n");
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
-	fprintf(stderr, "  --appid APPID\t\tmount 'Documents' folder of app identified by APPID\n");
+	fprintf(stderr, "  --documents APPID\tmount 'Documents' folder of app identified by APPID\n");
+	fprintf(stderr, "  --container APPID\tmount sandbox root of an app identified by APPID\n");
 #endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "\n");
@@ -660,13 +662,14 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		res = 0;
 		break;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
-	case KEY_APPID_LONG:
-		opts.appid = strdup(arg+7);
+	case KEY_VENDOR_CONTAINER_LONG:
+		opts.use_container = 1;
+		opts.appid = strdup(arg+11);
 		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
 		res = 0;
 		break;
-	case KEY_APPID:
-		opts.appid = strdup(arg+2);
+	case KEY_VENDOR_DOCUMENTS_LONG:
+		opts.appid = strdup(arg+11);
 		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
 		res = 0;
 		break;
@@ -793,8 +796,10 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Could not start document sharing service!\n");
 			return EXIT_FAILURE;
 		}
-		if (house_arrest_send_command(house_arrest, "VendContainer", opts.appid) != HOUSE_ARREST_E_SUCCESS) {
-			fprintf(stderr, "Could not send VendContainer command!\n");
+
+		/* FIXME: iOS 3.x house_arrest does not know about VendDocuments yet, thus use VendContainer and chroot manually with fuse subdir module */
+		if (house_arrest_send_command(house_arrest, opts.use_container ? "VendContainer": "VendDocuments", opts.appid) != HOUSE_ARREST_E_SUCCESS) {
+			fprintf(stderr, "Could not send house_arrest command!\n");
 			goto leave_err;
 		}
 
@@ -813,8 +818,10 @@ int main(int argc, char *argv[])
 		}
 		plist_free(dict);
 
-		fuse_opt_add_arg(&args, "-omodules=subdir");
-		fuse_opt_add_arg(&args, "-osubdir=Documents");
+		if (opts.use_container == 0) {
+			fuse_opt_add_arg(&args, "-omodules=subdir");
+			fuse_opt_add_arg(&args, "-osubdir=Documents");
+		}
 	}
 #endif
 	res = fuse_main(args.argc, args.argv, &ifuse_oper, NULL);

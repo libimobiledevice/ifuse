@@ -1,45 +1,59 @@
 .TH "ifuse" 1
 .SH NAME
-ifuse \- Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV.
+ifuse \- Mount directories of an iOS device locally using fuse.
 .SH SYNOPSIS
-.B ifuse <mount_point> [OPTIONS]
+.B ifuse MOUNTPOINT [OPTIONS]
 
 .SH DESCRIPTION
 
-Mount filesystem of an iPhone, iPod Touch, iPad or Apple TV
+Mount directories of an iOS device locally using fuse. By default the media
+directory is mounted, options allow to also mount the sandbox container of an
+app, an app's documents folder or even the root filesystem on jailbroken
+devices.
 
 Example:
 
-ifuse /media/iPhone \-\-root
+$ ifuse /media/iPhone \-\-root
 
 This mounts the root filesystem of the first attached device on
 this computer in the directory /media/iPhone.
 
+Regular users are able to unmount fuse mounts using "fusermount -u MOUNTPOINT".
 
 .SH OPTIONS
 .TP
 .B \-o opt,[opt...] 
 mount options.
 .TP
-.B \-u|\-\-uuid UUID
+.B \-u, \-\-uuid UUID
 mount specific device by its 40-digit device UUID.
 .TP
-.B \-h|\-\-help
+.B \-h, \-\-help
 prints usage information.
 .TP
-.B \-V|\-\-version
+.B \-V, \-\-version
 print version.
 .TP
-.B \-\-appid APPID
+.B \-d, \-\-debug
+enable libimobiledevice communication debugging.
+.TP
+.B \-\-documents APPID
 mount 'Documents' folder of app identified by APPID.
+.TP
+.B \-\-container APPID
+mount sandbox root of an app identified by APPID.
 .TP
 .B \-\-root 
 mount root file system (jailbroken device required).
-.TP
-.B \-\-debug
-enable libimobiledevice communication debugging.
 
 .SH AUTHOR
+Julien Lavergne (man page)
+
+Martin Szulecki
+
 Matt Colyer
 
-Man page written to conform with Debian by Julien Lavergne.
+Nikias Bassen
+
+.SH SEE ALSO
+fusermount(1)

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT(ifuse, 1.1.2)
+AC_INIT(ifuse, 1.1.3)
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([config.h])

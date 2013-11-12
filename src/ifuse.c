@@ -753,6 +753,11 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "Please disable the password protection on your device and try again.\n");
 			fprintf(stderr, "The device does not allow pairing as long as a password has been set.\n");
 			fprintf(stderr, "You can enable it again after the connection succeeded.\n");
+#ifdef LOCKDOWN_E_PAIRING_DIALOG_PENDING
+		} else if (ret == LOCKDOWN_E_PAIRING_DIALOG_PENDING) {
+			fprintf(stderr, "Please dismiss the trust dialog on your device and try again.\n");
+			fprintf(stderr, "The device does not allow pairing as long as the dialog has not been accepted.\n");
+#endif
 		} else {
 			fprintf(stderr, "Failed to connect to lockdownd service on the device.\n");
 			fprintf(stderr, "Try again. If it still fails try rebooting your device.\n");

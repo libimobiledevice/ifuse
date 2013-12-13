@@ -255,7 +255,7 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 			}
 #ifdef _DARWIN_FEATURE_64_BIT_INODE
 			else if (!strcmp(info[i], "st_birthtime")) { /* available on iOS 7+ */
-				stbuf->st_birthtimespec = (time_t)(atoll(info[i+1]) / 1000000000);
+				stbuf->st_birthtime = (time_t)(atoll(info[i+1]) / 1000000000);
 			}
 #endif
 		}

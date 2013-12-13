@@ -66,11 +66,16 @@ file/document sharing feature. It allows you to exchange files with an
 application on the device directly through it's documents folder by specifing
 the application identifier like this:
 
-	$ ifuse --appid <appid> <mountpoint>
+	$ ifuse --documents <appid> <mountpoint>
 
 The following example mounts the documents folder of the VLC app to /mnt:
 
-	$ ifuse --appid org.videolan.vlc-ios /mnt
+	$ ifuse --documents org.videolan.vlc-ios /mnt
+
+It is also possible to mount the sandboxed root folder of an application
+using the --container parameter:
+
+	$ ifuse --container <appid> <mountpoint>
 
 Addtional help can be shown using:
 

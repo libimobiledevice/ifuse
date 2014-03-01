@@ -1,3 +1,12 @@
+Version 1.1.3
+~~~~~~~~~~~~~
+
+* Changes:
+  - Updated to compile with latest libimobiledevice
+  - New command line options --documents and --container (obsoletes --appid)
+  - Handle error condition caused by pending iOS7+ trust dialog
+  - Minor fixes and changes
+
 Version 1.1.2
 ~~~~~~~~~~~~~
 

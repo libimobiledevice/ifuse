@@ -3,6 +3,7 @@
 
 AC_PREREQ(2.61)
 AC_INIT(ifuse, 1.1.3)
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip])
 AC_CONFIG_SRCDIR([src/])
 AC_CONFIG_HEADERS([config.h])
@@ -41,6 +42,8 @@ AC_TYPE_UINT8_T
 AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
+
+m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 AC_OUTPUT(Makefile src/Makefile docs/Makefile)
 

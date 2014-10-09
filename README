@@ -77,6 +77,9 @@ using the --container parameter:
 
 	$ ifuse --container <appid> <mountpoint>
 
+If ideviceinstaller is installed, obtain the 'appid' (bundle identifier) using:
+	$ ideviceinstaller -l
+
 Addtional help can be shown using:
 
 	$ ifuse --help

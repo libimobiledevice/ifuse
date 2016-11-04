@@ -45,6 +45,7 @@
 #include <libimobiledevice/afc.h>
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 #include <libimobiledevice/house_arrest.h>
+#include <libimobiledevice/installation_proxy.h>
 #endif
 
 /* FreeBSD and others don't have ENODATA, so let's fake it */
@@ -70,6 +71,7 @@ static struct {
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	char *appid;
 	int use_container;
+	int should_list_apps;
 #endif
 	char *service_name;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
@@ -87,6 +89,7 @@ enum {
 	KEY_UDID_LONG,
 	KEY_VENDOR_DOCUMENTS_LONG,
 	KEY_VENDOR_CONTAINER_LONG,
+	KEY_LIST_APPS_LONG,
 	KEY_DEBUG,
 	KEY_DEBUG_LONG
 };
@@ -104,6 +107,7 @@ static struct fuse_opt ifuse_opts[] = {
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	FUSE_OPT_KEY("--documents %s", KEY_VENDOR_DOCUMENTS_LONG),
 	FUSE_OPT_KEY("--container %s", KEY_VENDOR_CONTAINER_LONG),
+	FUSE_OPT_KEY("--list-apps",    KEY_LIST_APPS_LONG),
 #endif
 	FUSE_OPT_END
 };
@@ -637,6 +641,7 @@ static void print_usage()
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	fprintf(stderr, "  --documents APPID\tmount 'Documents' folder of app identified by APPID\n");
 	fprintf(stderr, "  --container APPID\tmount sandbox root of an app identified by APPID\n");
+	fprintf(stderr, "  --list-apps\t\tlist installed apps that have file sharing enabled\n");
 #endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "\n");
@@ -689,6 +694,9 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	case KEY_VERSION:
 		fprintf(stderr, "%s %s\n", PACKAGE_NAME, PACKAGE_VERSION);
 		exit(EXIT_SUCCESS);
+	case KEY_LIST_APPS_LONG:
+		opts.should_list_apps = 1;
+		break;
 	case FUSE_OPT_KEY_OPT:
 		/* ignore other options and pass them to fuse_main later */
 		break;
@@ -707,6 +715,77 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	return res;
 }
 
+static void list_available_apps(const char *udid)
+{
+	idevice_t dev = NULL;
+	if (idevice_new(&dev, udid) != IDEVICE_E_SUCCESS) {
+		fprintf(stderr, "ERROR: Failed to connect to device %s\n", udid);
+		goto leave_cleanup;
+	}
+
+	instproxy_client_t ip = NULL;
+	if (instproxy_client_start_service(dev, &ip, "ifuse") != INSTPROXY_E_SUCCESS) {
+		fprintf(stderr, "ERROR: Couldn't connect to installation proxy on device %s\n", udid);
+		goto leave_cleanup;
+	}
+
+	plist_t client_opts = instproxy_client_options_new();
+	instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
+	instproxy_client_options_set_return_attributes(client_opts,
+				"CFBundleIdentifier",
+				"CFBundleDisplayName",
+				"CFBundleVersion",
+				"UIFileSharingEnabled",
+				NULL
+	);
+
+	plist_t apps = NULL;
+	instproxy_browse(ip, client_opts, &apps);
+
+	if (!apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
+		fprintf(stderr, "ERROR: instproxy_browse returnd an invalid plist?!\n");
+		goto leave_cleanup;
+	}
+
+	uint32_t i = 0;
+	for (i = 0; i < plist_array_get_size(apps); i++) {
+		plist_t node = plist_array_get_item(apps, i);
+		if (node && plist_get_node_type(node) == PLIST_DICT) {
+			uint8_t sharing_enabled = 0;
+			plist_t val = plist_dict_get_item(node, "UIFileSharingEnabled");
+			if (val && plist_get_node_type(val) == PLIST_BOOLEAN) {
+				plist_get_bool_val(val, &sharing_enabled);
+			}
+			if (sharing_enabled) {
+				char *bid = NULL;
+				char *ver = NULL;
+				char *name = NULL;
+				val = plist_dict_get_item(node, "CFBundleIdentifier");
+				if (val) {
+					plist_get_string_val(val, &bid);
+				}
+				val = plist_dict_get_item(node, "CFBundleVersion");
+				if (val) {
+					plist_get_string_val(val, &ver);
+				}
+				val = plist_dict_get_item(node, "CFBundleDisplayName");
+				if (val) {
+					plist_get_string_val(val, &name);
+				}
+				printf("%s, \"%s\", \"%s\"\n", bid, ver, name);
+				free(bid);
+				free(ver);
+				free(name);
+			}
+		}
+	}
+	plist_free(apps);
+
+leave_cleanup:
+	instproxy_client_free(ip);
+	idevice_free(dev);
+}
+
 int main(int argc, char *argv[])
 {
 	int res = EXIT_FAILURE;
@@ -721,13 +800,18 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (!opts.mount_point) {
-		fprintf(stderr, "ERROR: No mount point specified\n");
+	if (opts.device_udid && strlen(opts.device_udid) != 40) {
+		fprintf(stderr, "Invalid device UDID specified, length needs to be 40 characters\n");
 		return EXIT_FAILURE;
 	}
 
-	if (opts.device_udid && strlen(opts.device_udid) != 40) {
-		fprintf(stderr, "Invalid device UDID specified, length needs to be 40 characters\n");
+	if (opts.should_list_apps) {
+		list_available_apps(opts.device_udid);
+		return EXIT_SUCCESS;
+	}
+
+	if (!opts.mount_point) {
+		fprintf(stderr, "ERROR: No mount point specified\n");
 		return EXIT_FAILURE;
 	}
 

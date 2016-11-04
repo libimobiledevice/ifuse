@@ -813,7 +813,10 @@ int main(int argc, char *argv[])
 			char *str = NULL;
 			plist_get_string_val(node, &str);
 			fprintf(stderr, "ERROR: %s\n", str);
-			if (str) free(str);
+			if (str && !strcmp(str, "InstallationLookupFailed")) {
+				fprintf(stderr, "The App '%s' is either not present on the device, or the 'UIFileSharingEnabled' key is not set in its Info.plist. Starting with iOS 8.3 this key is mandatory to allow access to an app's Documents folder.\n", opts.appid);
+			}
+			free(str);
 			goto leave_err;
 		}
 		plist_free(dict);

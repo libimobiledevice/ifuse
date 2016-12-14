@@ -76,6 +76,9 @@ It is also possible to mount the sandboxed root folder of an application
 using the --container parameter:
 
 	$ ifuse --container <appid> <mountpoint>
+	
+To obtain the application identifier, use this command from the ideviceinstaller package:
+	$ ideviceinstaller -l
 
 If ideviceinstaller is installed, obtain the 'appid' (bundle identifier) using:
 	$ ideviceinstaller -l

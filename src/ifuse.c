@@ -634,7 +634,7 @@ static void print_usage()
 	fprintf(stderr, "Usage: " PACKAGE_NAME " MOUNTPOINT [OPTIONS]\n");
 	fprintf(stderr, "Mount directories of an iOS device locally using fuse.\n\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
-	fprintf(stderr, "  -u, --udid UDID\tmount specific device by its 40-digit device UDID\n");
+	fprintf(stderr, "  -u, --udid UDID\tmount specific device by UDID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 	fprintf(stderr, "  -d, --debug\t\tenable libimobiledevice communication debugging\n");
@@ -800,8 +800,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (opts.device_udid && strlen(opts.device_udid) != 40) {
-		fprintf(stderr, "Invalid device UDID specified, length needs to be 40 characters\n");
+	if (opts.device_udid && !*opts.device_udid) {
+		fprintf(stderr, "ERROR: UDID must not be empty\n");
 		return EXIT_FAILURE;
 	}
 

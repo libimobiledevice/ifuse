@@ -743,7 +743,7 @@ static void list_available_apps(const char *udid)
 	instproxy_browse(ip, client_opts, &apps);
 
 	if (!apps || (plist_get_node_type(apps) != PLIST_ARRAY)) {
-		fprintf(stderr, "ERROR: instproxy_browse returnd an invalid plist?!\n");
+		fprintf(stderr, "ERROR: instproxy_browse returned an invalid plist?!\n");
 		goto leave_cleanup;
 	}
 

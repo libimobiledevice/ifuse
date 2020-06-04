@@ -1,3 +1,12 @@
+Version 1.1.4
+~~~~~~~~~~~~~
+
+* Changes:
+  - Use automake silent rules if available
+  - Add helpful message when mounting an app document folder fails
+  - Add new "--list-apps" option to print list of apps with file sharing enabled
+  - Remove length check on UDID argument to support newer devices
+
 Version 1.1.3
 ~~~~~~~~~~~~~
 

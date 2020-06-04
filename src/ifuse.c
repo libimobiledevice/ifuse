@@ -76,6 +76,7 @@ static struct {
 	char *service_name;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 	lockdownd_service_descriptor_t service;
+	int prefer_network_devices;
 #else
 	uint16_t port;
 #endif
@@ -87,6 +88,8 @@ enum {
 	KEY_ROOT,
 	KEY_UDID,
 	KEY_UDID_LONG,
+	KEY_NETWORK,
+	KEY_NETWORK_LONG,
 	KEY_VENDOR_DOCUMENTS_LONG,
 	KEY_VENDOR_CONTAINER_LONG,
 	KEY_LIST_APPS_LONG,
@@ -101,6 +104,8 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("--help",         KEY_HELP),
 	FUSE_OPT_KEY("-u %s",          KEY_UDID),
 	FUSE_OPT_KEY("--udid %s",      KEY_UDID_LONG),
+	FUSE_OPT_KEY("-n",             KEY_NETWORK),
+	FUSE_OPT_KEY("--network",      KEY_NETWORK_LONG),
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
 	FUSE_OPT_KEY("-d",             KEY_DEBUG),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG_LONG),
@@ -638,6 +643,7 @@ static void print_usage()
 	fprintf(stderr, "OPTIONS:\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
 	fprintf(stderr, "  -u, --udid UDID\tmount specific device by UDID\n");
+	fprintf(stderr, "  -n, --network\t\tconnect to network device even if available via USB\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 	fprintf(stderr, "  -d, --debug\t\tenable libimobiledevice communication debugging\n");
@@ -670,6 +676,11 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		break;
 	case KEY_UDID:
 		opts.device_udid = strdup(arg+2);
+		res = 0;
+		break;
+	case KEY_NETWORK:
+	case KEY_NETWORK_LONG:
+		opts.prefer_network_devices = 1;
 		res = 0;
 		break;
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
@@ -721,17 +732,11 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 	return res;
 }
 
-static void list_available_apps(const char *udid)
+static void list_available_apps(idevice_t dev)
 {
-	idevice_t dev = NULL;
-	if (idevice_new(&dev, udid) != IDEVICE_E_SUCCESS) {
-		fprintf(stderr, "ERROR: Failed to connect to device %s\n", udid);
-		goto leave_cleanup;
-	}
-
 	instproxy_client_t ip = NULL;
 	if (instproxy_client_start_service(dev, &ip, "ifuse") != INSTPROXY_E_SUCCESS) {
-		fprintf(stderr, "ERROR: Couldn't connect to installation proxy on device %s\n", udid);
+		fprintf(stderr, "ERROR: Couldn't connect to installation proxy on device\n");
 		goto leave_cleanup;
 	}
 
@@ -798,6 +803,7 @@ int main(int argc, char *argv[])
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	struct stat mst;
 	lockdownd_error_t ret = LOCKDOWN_E_SUCCESS;
+	enum idevice_options lookup_opts = IDEVICE_LOOKUP_USBMUX | IDEVICE_LOOKUP_NETWORK;
 
 	memset(&opts, 0, sizeof(opts));
 	opts.service_name = AFC_SERVICE_NAME;
@@ -811,34 +817,49 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (opts.should_list_apps) {
-		list_available_apps(opts.device_udid);
-		return EXIT_SUCCESS;
+	if (opts.prefer_network_devices) {
+		lookup_opts |= IDEVICE_LOOKUP_PREFER_NETWORK;
 	}
 
-	if (!opts.mount_point) {
-		fprintf(stderr, "ERROR: No mount point specified\n");
-		return EXIT_FAILURE;
-	}
-
-	if (stat(opts.mount_point, &mst) < 0) {
-		if (errno == ENOENT) {
-			fprintf(stderr, "ERROR: the mount point specified does not exist\n");
+	if (!opts.should_list_apps) {
+		if (!opts.mount_point) {
+			fprintf(stderr, "ERROR: No mount point specified\n");
 			return EXIT_FAILURE;
 		}
-		
-		fprintf(stderr, "There was an error accessing the mount point: %s\n", strerror(errno));
-		return EXIT_FAILURE;
+
+		if (stat(opts.mount_point, &mst) < 0) {
+			if (errno == ENOENT) {
+				fprintf(stderr, "ERROR: the mount point specified does not exist\n");
+				return EXIT_FAILURE;
+			}
+
+			fprintf(stderr, "There was an error accessing the mount point: %s\n", strerror(errno));
+			return EXIT_FAILURE;
+		}
 	}
 
-	idevice_new(&phone, opts.device_udid ? opts.device_udid : NULL);
-	if (!phone) {
-		fprintf(stderr, "No device found, is it connected?\n");
-		fprintf(stderr, "If it is make sure that your user has permissions to access the raw usb device.\n");
+	ret = idevice_new_with_options(&phone, opts.device_udid, lookup_opts);
+	if (ret != IDEVICE_E_SUCCESS) {
+		if (opts.device_udid) {
+			printf("ERROR: Device %s not found!\n", opts.device_udid);
+		} else {
+			printf("ERROR: No device found!\n");
+		}
+		fprintf(stderr, "Is the device properly connected?\n");
+		fprintf(stderr, "If it is make sure that your user has permissions to access the raw USB device.\n");
 		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
 		return EXIT_FAILURE;
 	}
-	
+
+	if (!phone) {
+		return EXIT_FAILURE;
+	}
+
+	if (opts.should_list_apps) {
+		list_available_apps(phone);
+		return EXIT_SUCCESS;
+	}
+
 	ret = lockdownd_client_new_with_handshake(phone, &control, "ifuse");
 	if (ret != LOCKDOWN_E_SUCCESS) {
 		idevice_free(phone);

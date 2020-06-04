@@ -758,6 +758,10 @@ static void list_available_apps(idevice_t dev)
 		goto leave_cleanup;
 	}
 
+	/* output colum titles */
+	printf("\"%s\",\"%s\",\"%s\"\n", "CFBundleIdentifier", "CFBundleVersion", "CFBundleDisplayName");
+
+	/* output rows with app information */
 	uint32_t i = 0;
 	for (i = 0; i < plist_array_get_size(apps); i++) {
 		plist_t node = plist_array_get_item(apps, i);
@@ -783,7 +787,7 @@ static void list_available_apps(idevice_t dev)
 				if (val) {
 					plist_get_string_val(val, &name);
 				}
-				printf("%s, \"%s\", \"%s\"\n", bid, ver, name);
+				printf("\"%s\",\"%s\",\"%s\"\n", bid, ver, name);
 				free(bid);
 				free(ver);
 				free(name);

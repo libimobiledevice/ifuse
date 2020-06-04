@@ -45,7 +45,11 @@ AC_CHECK_FUNCS([strcasecmp strdup strerror strndup])
 
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
-AC_OUTPUT(Makefile src/Makefile docs/Makefile)
+AC_OUTPUT([
+Makefile
+src/Makefile
+docs/Makefile
+])
 
 echo "
 Configuration for $PACKAGE $VERSION:

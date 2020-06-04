@@ -736,7 +736,7 @@ static void list_available_apps(const char *udid)
 	}
 
 	plist_t client_opts = instproxy_client_options_new();
-	instproxy_client_options_add(client_opts, "ApplicationType", "User", NULL);
+	instproxy_client_options_add(client_opts, "ApplicationType", "Any", NULL);
 	instproxy_client_options_set_return_attributes(client_opts,
 				"CFBundleIdentifier",
 				"CFBundleDisplayName",

@@ -25,14 +25,14 @@ Regular users are able to unmount fuse mounts using "fusermount -u MOUNTPOINT".
 .B \-o opt,[opt...] 
 mount options.
 .TP
-.B \-u, \-\-uuid UUID
-mount specific device by its 40-digit device UUID.
+.B \-u, \-\-udid UDID
+mount specific device by UDID.
 .TP
 .B \-n, \-\-network
 connect to network device even if available via USB.
 .TP
 .B \-h, \-\-help
-prints usage information.
+print usage information.
 .TP
 .B \-V, \-\-version
 print version.
@@ -46,7 +46,10 @@ mount 'Documents' folder of app identified by APPID.
 .B \-\-container APPID
 mount sandbox root of an app identified by APPID.
 .TP
-.B \-\-root 
+.B \-\-list-apps
+list installed apps that have file sharing enabled.
+.TP
+.B \-\-root
 mount root file system (jailbroken device required).
 
 .SH AUTHOR

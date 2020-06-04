@@ -632,7 +632,10 @@ static struct fuse_operations ifuse_oper = {
 static void print_usage()
 {
 	fprintf(stderr, "Usage: " PACKAGE_NAME " MOUNTPOINT [OPTIONS]\n");
-	fprintf(stderr, "Mount directories of an iOS device locally using fuse.\n\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Mount directories of an iOS device locally using fuse.\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "OPTIONS:\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
 	fprintf(stderr, "  -u, --udid UDID\tmount specific device by UDID\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
@@ -645,11 +648,14 @@ static void print_usage()
 #endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "Example:\n\n");
+	fprintf(stderr, "Example:\n");
+	fprintf(stderr, "\n");
 	fprintf(stderr, "  $ ifuse /media/iPhone --root\n\n");
 	fprintf(stderr, "  This mounts the root filesystem of the first attached device on\n");
 	fprintf(stderr, "  this computer in the directory /media/iPhone.\n");
 	fprintf(stderr, "\n");
+	fprintf(stderr, "Homepage:    <" PACKAGE_URL ">\n");
+	fprintf(stderr, "Bug Reports: <" PACKAGE_BUGREPORT ">\n");
 }
 
 static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args *outargs)

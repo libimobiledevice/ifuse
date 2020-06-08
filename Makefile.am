@@ -11,4 +11,3 @@ indent:
 
 release:
 	git archive --format=tar --prefix=ifuse-${RELEASE}/ tags/${RELEASE} | bzip2 > ifuse-${RELEASE}.tar.bz2
-

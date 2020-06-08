@@ -1,5 +1,13 @@
-AM_CFLAGS = $(libfuse_CFLAGS) $(libimobiledevice_CFLAGS) $(libplist_CFLAGS) -g
-AM_LDFLAGS =  $(libfuse_LIBS) $(libimobiledevice_LIBS) $(libplist_LIBS)
+AM_CFLAGS = \
+	$(libfuse_CFLAGS) \
+	$(libimobiledevice_CFLAGS) \
+	$(libplist_CFLAGS) \
+	-g
+
+AM_LDFLAGS = \
+	$(libfuse_LIBS) \
+	$(libimobiledevice_LIBS) \
+	$(libplist_LIBS)
 
 bin_PROGRAMS = ifuse
 

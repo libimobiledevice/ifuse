@@ -1,6 +1,9 @@
 AUTOMAKE_OPTIONS = foreign
 SUBDIRS = docs src
 
+EXTRA_DIST = \
+	README.md
+
 DISTCHECK_CONFIGURE_FLAGS = --disable-root-sbin
 
 indent:

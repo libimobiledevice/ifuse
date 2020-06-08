@@ -1,4 +1,4 @@
-/* 
+/*
  * ifuse.c
  * A Fuse filesystem which exposes the iPhone's filesystem.
  *
@@ -8,15 +8,15 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation; either
  * version 2.1 of the License, or (at your option) any later version.
- * 
+ *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA 
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
 #define FUSE_USE_VERSION  26
@@ -161,7 +161,7 @@ struct afc_error_mapping {
 	{-1}
 };
 
-/** 
+/**
  * Tries to convert the AFC error value into a meaningful errno value.
  *
  * @param client AFC client to retrieve status value from.
@@ -421,7 +421,7 @@ void *ifuse_init(struct fuse_conn_info *conn)
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	if (house_arrest) {
 		afc_client_new_from_house_arrest_client(house_arrest, &afc);
-	} else { 
+	} else {
 #endif
 #ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 		afc_client_new(phone, opts.service, &afc);
@@ -558,11 +558,11 @@ int ifuse_readlink(const char *path, char *linktarget, size_t buflen)
 int ifuse_symlink(const char *target, const char *linkname)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	
+
 	afc_error_t err = afc_make_link(afc, AFC_SYMLINK, target, linkname);
 	if (err == AFC_E_SUCCESS)
 		return 0;
-	
+
 	return -get_afc_error_as_errno(err);
 }
 
@@ -591,7 +591,7 @@ int ifuse_unlink(const char *path)
 int ifuse_rename(const char *from, const char *to)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
-	
+
 	afc_error_t err = afc_rename_path(afc, from, to);
 	if (err == AFC_E_SUCCESS)
 		return 0;

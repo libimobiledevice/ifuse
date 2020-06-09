@@ -54,7 +54,7 @@ house_arrest_client_t house_arrest = NULL;
 /* assume this is the default block size */
 int g_blocksize = 4096;
 
-idevice_t phone = NULL;
+idevice_t device = NULL;
 lockdownd_client_t control = NULL;
 
 int debug = 0;
@@ -407,7 +407,7 @@ void *ifuse_init(struct fuse_conn_info *conn)
 	if (house_arrest) {
 		afc_client_new_from_house_arrest_client(house_arrest, &afc);
 	} else {
-		afc_client_new(phone, opts.service, &afc);
+		afc_client_new(device, opts.service, &afc);
 	}
 
 	lockdownd_client_free(control);
@@ -439,7 +439,7 @@ void ifuse_cleanup(void *data)
 	if (control) {
 		lockdownd_client_free(control);
 	}
-	idevice_free(phone);
+	idevice_free(device);
 }
 
 int ifuse_flush(const char *path, struct fuse_file_info *fi)
@@ -813,7 +813,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = idevice_new_with_options(&phone, opts.device_udid, (opts.use_network) ? IDEVICE_LOOKUP_NETWORK : IDEVICE_LOOKUP_USBMUX);
+	err = idevice_new_with_options(&device, opts.device_udid, (opts.use_network) ? IDEVICE_LOOKUP_NETWORK : IDEVICE_LOOKUP_USBMUX);
 	if (err != IDEVICE_E_SUCCESS) {
 		if (opts.device_udid) {
 			printf("ERROR: Device %s not found!\n", opts.device_udid);
@@ -826,18 +826,18 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (!phone) {
+	if (!device) {
 		return EXIT_FAILURE;
 	}
 
 	if (opts.should_list_apps) {
-		list_available_apps(phone);
+		list_available_apps(device);
 		return EXIT_SUCCESS;
 	}
 
-	ret = lockdownd_client_new_with_handshake(phone, &control, "ifuse");
+	ret = lockdownd_client_new_with_handshake(device, &control, "ifuse");
 	if (ret != LOCKDOWN_E_SUCCESS) {
-		idevice_free(phone);
+		idevice_free(device);
 		if (ret == LOCKDOWN_E_PASSWORD_PROTECTED) {
 			fprintf(stderr, "Please disable the password protection on your device and try again.\n");
 			fprintf(stderr, "The device does not allow pairing as long as a password has been set.\n");
@@ -856,7 +856,7 @@ int main(int argc, char *argv[])
 
 	if ((lockdownd_start_service(control, opts.service_name, &opts.service) != LOCKDOWN_E_SUCCESS) || !opts.service) {
 		lockdownd_client_free(control);
-		idevice_free(phone);
+		idevice_free(device);
 		fprintf(stderr, "Failed to start AFC service '%s' on the device.\n", opts.service_name);
 		if (!strcmp(opts.service_name, AFC2_SERVICE_NAME)) {
 			fprintf(stderr, "This service enables access to the root filesystem of your device.\n");
@@ -866,7 +866,7 @@ int main(int argc, char *argv[])
 	}
 
 	if (!strcmp(opts.service_name, HOUSE_ARREST_SERVICE_NAME)) {
-		house_arrest_client_new(phone, opts.service, &house_arrest);
+		house_arrest_client_new(device, opts.service, &house_arrest);
 		if (!house_arrest) {
 			fprintf(stderr, "Could not start document sharing service!\n");
 			return EXIT_FAILURE;

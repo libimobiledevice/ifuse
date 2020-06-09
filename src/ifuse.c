@@ -67,7 +67,7 @@ static struct {
 	int should_list_apps;
 	char *service_name;
 	lockdownd_service_descriptor_t service;
-	int prefer_network_devices;
+	int use_network;
 } opts;
 
 enum {
@@ -621,7 +621,7 @@ static void print_usage()
 	fprintf(stderr, "OPTIONS:\n");
 	fprintf(stderr, "  -o opt,[opt...]\tmount options\n");
 	fprintf(stderr, "  -u, --udid UDID\tmount specific device by UDID\n");
-	fprintf(stderr, "  -n, --network\t\tconnect to network device even if available via USB\n");
+	fprintf(stderr, "  -n, --network\t\tconnect to network device\n");
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 	fprintf(stderr, "  -d, --debug\t\tenable libimobiledevice communication debugging\n");
@@ -656,7 +656,7 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		break;
 	case KEY_NETWORK:
 	case KEY_NETWORK_LONG:
-		opts.prefer_network_devices = 1;
+		opts.use_network = 1;
 		res = 0;
 		break;
 	case KEY_VENDOR_CONTAINER_LONG:
@@ -796,10 +796,6 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (opts.prefer_network_devices) {
-		lookup_opts |= IDEVICE_LOOKUP_PREFER_NETWORK;
-	}
-
 	if (!opts.should_list_apps) {
 		if (!opts.mount_point) {
 			fprintf(stderr, "ERROR: No mount point specified\n");
@@ -817,7 +813,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	err = idevice_new_with_options(&phone, opts.device_udid, lookup_opts);
+	err = idevice_new_with_options(&phone, opts.device_udid, (opts.use_network) ? IDEVICE_LOOKUP_NETWORK : IDEVICE_LOOKUP_USBMUX);
 	if (err != IDEVICE_E_SUCCESS) {
 		if (opts.device_udid) {
 			printf("ERROR: Device %s not found!\n", opts.device_udid);

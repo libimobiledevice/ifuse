@@ -1,9 +1,20 @@
 #!/bin/sh
-aclocal
-autoheader
-automake --add-missing
-autoconf
+
+olddir=`pwd`
+srcdir=`dirname $0`
+test -z "$srcdir" && srcdir=.
+
+(
+  cd "$srcdir"
+
+  aclocal
+  autoheader
+  automake --add-missing
+  autoconf
+
+  cd "$olddir"
+)
 
 if [ -z "$NOCONFIGURE" ]; then
-    ./configure "$@"
+  $srcdir/configure "$@"
 fi

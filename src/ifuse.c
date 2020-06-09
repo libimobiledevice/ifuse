@@ -36,26 +36,20 @@
 
 #define AFC_SERVICE_NAME "com.apple.afc"
 #define AFC2_SERVICE_NAME "com.apple.afc2"
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 #define HOUSE_ARREST_SERVICE_NAME "com.apple.mobile.house_arrest"
-#endif
 
 #include <libimobiledevice/libimobiledevice.h>
 #include <libimobiledevice/lockdown.h>
 #include <libimobiledevice/afc.h>
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 #include <libimobiledevice/house_arrest.h>
 #include <libimobiledevice/installation_proxy.h>
-#endif
 
 /* FreeBSD and others don't have ENODATA, so let's fake it */
 #ifndef ENODATA
 #define ENODATA EIO
 #endif
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 house_arrest_client_t house_arrest = NULL;
-#endif
 
 /* assume this is the default block size */
 int g_blocksize = 4096;
@@ -68,18 +62,12 @@ int debug = 0;
 static struct {
 	char *mount_point;
 	char *device_udid;
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	char *appid;
 	int use_container;
 	int should_list_apps;
-#endif
 	char *service_name;
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 	lockdownd_service_descriptor_t service;
 	int prefer_network_devices;
-#else
-	uint16_t port;
-#endif
 } opts;
 
 enum {
@@ -109,11 +97,9 @@ static struct fuse_opt ifuse_opts[] = {
 	FUSE_OPT_KEY("--root",         KEY_ROOT),
 	FUSE_OPT_KEY("-d",             KEY_DEBUG),
 	FUSE_OPT_KEY("--debug",        KEY_DEBUG_LONG),
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	FUSE_OPT_KEY("--documents %s", KEY_VENDOR_DOCUMENTS_LONG),
 	FUSE_OPT_KEY("--container %s", KEY_VENDOR_CONTAINER_LONG),
 	FUSE_OPT_KEY("--list-apps",    KEY_LIST_APPS_LONG),
-#endif
 	FUSE_OPT_END
 };
 
@@ -418,19 +404,11 @@ void *ifuse_init(struct fuse_conn_info *conn)
 
 	conn->async_read = 0;
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	if (house_arrest) {
 		afc_client_new_from_house_arrest_client(house_arrest, &afc);
 	} else {
-#endif
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 		afc_client_new(phone, opts.service, &afc);
-#else
-		afc_client_new(phone, opts.port, &afc);
-#endif
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	}
-#endif
 
 	lockdownd_client_free(control);
 	control = NULL;
@@ -647,11 +625,9 @@ static void print_usage()
 	fprintf(stderr, "  -h, --help\t\tprint usage information\n");
 	fprintf(stderr, "  -V, --version\t\tprint version\n");
 	fprintf(stderr, "  -d, --debug\t\tenable libimobiledevice communication debugging\n");
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	fprintf(stderr, "  --documents APPID\tmount 'Documents' folder of app identified by APPID\n");
 	fprintf(stderr, "  --container APPID\tmount sandbox root of an app identified by APPID\n");
 	fprintf(stderr, "  --list-apps\t\tlist installed apps that have file sharing enabled\n");
-#endif
 	fprintf(stderr, "  --root\t\tmount root file system (jailbroken device required)\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "Example:\n");
@@ -683,7 +659,6 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		opts.prefer_network_devices = 1;
 		res = 0;
 		break;
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	case KEY_VENDOR_CONTAINER_LONG:
 		opts.use_container = 1;
 		opts.appid = strdup(arg+11);
@@ -695,7 +670,6 @@ static int ifuse_opt_proc(void *data, const char *arg, int key, struct fuse_args
 		opts.service_name = HOUSE_ARREST_SERVICE_NAME;
 		res = 0;
 		break;
-#endif
 	case KEY_DEBUG:
 	case KEY_DEBUG_LONG:
 		idevice_set_debug_level(1);
@@ -806,7 +780,8 @@ int main(int argc, char *argv[])
 	int res = EXIT_FAILURE;
 	struct fuse_args args = FUSE_ARGS_INIT(argc, argv);
 	struct stat mst;
-	lockdownd_error_t ret = LOCKDOWN_E_SUCCESS;
+	idevice_error_t err = IDEVICE_E_UNKNOWN_ERROR;
+	lockdownd_error_t ret = LOCKDOWN_E_UNKNOWN_ERROR;
 	enum idevice_options lookup_opts = IDEVICE_LOOKUP_USBMUX | IDEVICE_LOOKUP_NETWORK;
 
 	memset(&opts, 0, sizeof(opts));
@@ -842,8 +817,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	ret = idevice_new_with_options(&phone, opts.device_udid, lookup_opts);
-	if (ret != IDEVICE_E_SUCCESS) {
+	err = idevice_new_with_options(&phone, opts.device_udid, lookup_opts);
+	if (err != IDEVICE_E_SUCCESS) {
 		if (opts.device_udid) {
 			printf("ERROR: Device %s not found!\n", opts.device_udid);
 		} else {
@@ -883,13 +858,7 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	if (
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
-	(lockdownd_start_service(control, opts.service_name, &opts.service) != LOCKDOWN_E_SUCCESS) || !opts.service
-#else
-	(lockdownd_start_service(control, opts.service_name, &opts.port) != LOCKDOWN_E_SUCCESS) || !opts.port
-#endif
- 	) {
+	if ((lockdownd_start_service(control, opts.service_name, &opts.service) != LOCKDOWN_E_SUCCESS) || !opts.service) {
 		lockdownd_client_free(control);
 		idevice_free(phone);
 		fprintf(stderr, "Failed to start AFC service '%s' on the device.\n", opts.service_name);
@@ -900,13 +869,8 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 	if (!strcmp(opts.service_name, HOUSE_ARREST_SERVICE_NAME)) {
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1_5
 		house_arrest_client_new(phone, opts.service, &house_arrest);
-#else
-		house_arrest_client_new(phone, opts.port, &house_arrest);
-#endif
 		if (!house_arrest) {
 			fprintf(stderr, "Could not start document sharing service!\n");
 			return EXIT_FAILURE;
@@ -941,14 +905,11 @@ int main(int argc, char *argv[])
 			fuse_opt_add_arg(&args, "-osubdir=Documents");
 		}
 	}
-#endif
 	res = fuse_main(args.argc, args.argv, &ifuse_oper, NULL);
 
-#ifdef HAVE_LIBIMOBILEDEVICE_1_1
 leave_err:
 	if (house_arrest) {
 		house_arrest_client_free(house_arrest);
 	}
-#endif
 	return res;
 }

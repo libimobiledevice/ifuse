@@ -1,62 +1,93 @@
 # ifuse
 
-## About
+*A fuse filesystem implementation to access the contents of iOS devices.*
 
-A fuse filesystem implementation to access the contents of iOS devices.
+## Features
 
-## Requirements
+This project allows mounting various directories of an iOS device locally using
+the [FUSE file system interface](https://github.com/libfuse/libfuse).
 
-Development Packages of:
-* libfuse (and the associated kernel modules)
-* libimobiledevice
-* libplist
+Some key features are:
 
-Software:
-* usbmuxd
-* make
-* autoheader
-* automake
-* autoconf
-* libtool
-* pkg-config
-* gcc
+- **Media**: Mount media directory of an iOS device locally
+- **Apps**: Mount sandbox container or document directory of an app
+- **Jailbreak**: Mount root filesystem on jailbroken devices *(requires AFC2 service)*
+- **Browse**: Allows to retrieve a list of installed file-sharing enabled apps
+- **Implementation**: Uses [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) for communication with the device
 
-## Installation
+## Installation / Getting started
 
-To compile run:
-```bash
+### Debian / Ubuntu Linux
+
+First install all required dependencies and build tools:
+```shell
+sudo apt-get install \
+	build-essential \
+	checkinstall \
+	git \
+	autoconf \
+	automake \
+	libtool-bin \
+	libplist-dev \
+	libimobiledevice-dev \
+	libfuse3-dev \
+	usbmuxd
+```
+
+Then clone the actual project repository:
+```shell
+git clone https://github.com/libimobiledevice/ifuse.git
+cd ifuse
+```
+
+Now you can build and install it:
+```shell
 ./autogen.sh
 make
 sudo make install
 ```
 
+### Setting up FUSE
+
+Note that on some systems, you may have to load the `fuse` kernel
+module first and to ensure that you are a member of the `fuse` group:
+
+```shell
+sudo modprobe fuse
+sudo adduser $USER fuse
+```
+
+You can check your membership of the `fuse` group with:
+
+```shell
+id | grep fuse && echo yes! || echo not yet...
+```
+
+If you have just added yourself, you will need to logout and log back
+in for the group change to become visible.
+
 ## Usage
 
 To mount the media partition from the device run:
-
-```bash
+```shell
 ifuse <mountpoint>
 ```
 
-**HINT**
-
-If you mount your device as regular user, the system might complain that
-the file /etc/fuse.conf is not readable. It means you do not belong to the
-'fuse' group (see below).
+**HINT:** *If you mount your device as regular user, the system might complain that
+the file `/etc/fuse.conf` is not readable. It means you do not belong to the
+`fuse` group (see below).*
 
 To unmount as a regular user you must run:
-
-```bash
-$ fusermount -u <mountpoint>
+```shell
+fusermount -u <mountpoint>
 ```
 
-By default, ifuse (via the AFC protocol) gives access to the '/var/root/Media/'
+By default, ifuse (via the AFC protocol) gives access to the `/var/root/Media/`
 chroot on the device (containing music/pictures). This is the right and safe
 way to access the device. However, if the device has been jailbroken, a full
 view of the device's filesystem might be available using the following command
 when mounting:
-
-```bash
+```shell
 ifuse --root <mountpoint>
 ```
 
@@ -69,69 +100,52 @@ If using libimobiledevice >= 1.1.0, ifuse can also be used with the iTunes
 file/document sharing feature. It allows you to exchange files with an
 application on the device directly through it's documents folder by specifing
 the application identifier like this:
-
-```bash
+```shell
 ifuse --documents <appid> <mountpoint>
 ```
 
-The following example mounts the documents folder of the VLC app to /mnt:
-
-```bash
+The following example mounts the documents folder of the VLC app to `/mnt`:
+```shell
 ifuse --documents org.videolan.vlc-ios /mnt
 ```
 
 It is also possible to mount the sandboxed root folder of an application
-using the --container parameter:
-
-```bash
+using the `--container` parameter:
+```shell
 ifuse --container <appid> <mountpoint>
 ```
 
-The <appid> (bundle identifier) of an app can be obtained using:
-
-```bash
+The `<appid>` (bundle identifier) of an app can be obtained using:
+```shell
 ifuse --list-apps
 ```
 
-Addtional help can be shown using:
-
-```bash
+Please consult the usage information or manual page for a full documentation of
+available command line options:
+```shell
 ifuse --help
+man ifuse
 ```
 
-## Setting up FUSE
+## Links
 
-Note that on some systems, you may have to load the 'fuse' kernel
-module first and to ensure that you are a member of the 'fuse' group:
-
-```bash
-sudo modprobe fuse
-sudo adduser $USER fuse
-```
-
-You can check your membership of the 'fuse' group with:
-
-```bash
-id | grep fuse && echo yes! || echo not yet...
-```
-
-If you have just added yourself, you will need to logout and log back
-in for the group change to become visible.
-
-## Who/What/Where?
-
-* Home: https://libimobiledevice.org/
-* Code: `git clone https://git.libimobiledevice.org/ifuse.git`
-* Code (Mirror): `git clone https://github.com/libimobiledevice/ifuse.git`
-* Tickets: https://github.com/libimobiledevice/ifuse/issues
+* Homepage: https://libimobiledevice.org/
+* Repository: https://git.libimobiledevice.org/ifuse.git
+* Repository (Mirror): https://github.com/libimobiledevice/ifuse.git
+* Issue Tracker: https://github.com/libimobiledevice/ifuse/issues
 * Mailing List: https://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
 * Twitter: https://twitter.com/libimobiledev
+
+## License
+
+This software is licensed under the [GNU Lesser General Public License v2.1](https://www.gnu.org/licenses/lgpl-2.1.en.html),
+also included in the repository in the `COPYING` file.
 
 ## Credits
 
 Apple, iPhone, iPod, iPad, Apple TV and iPod Touch are trademarks of Apple Inc.
 
-ifuse is an independent software application and has not been authorized,
+This project is an independent software application and has not been authorized,
 sponsored, or otherwise approved by Apple Inc.
 
-README Updated on: 2020-06-08
+README Updated on: 2020-06-13

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.64)
-AC_INIT([ifuse], [1.1.4], [https://github.com/libimobiledevice/ifuse/issues],, [https://libimobiledevice.org])
+AC_INIT([ifuse], [1.1.5], [https://github.com/libimobiledevice/ifuse/issues],, [https://libimobiledevice.org])
 AM_INIT_AUTOMAKE([dist-bzip2 no-dist-gzip check-news])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 AC_CONFIG_SRCDIR([src/])

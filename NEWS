@@ -6,6 +6,13 @@ Version 1.1.4
   - Add helpful message when mounting an app document folder fails
   - Add new "--list-apps" option to print list of apps with file sharing enabled
   - Remove length check on UDID argument to support newer devices
+  - Add "--network" option to allow connecting to network devices
+  - Add title row and use doubple quotes for "--list-apps" output
+  - Drop support for older versions of libimobiledevice
+  - Bump libimobiledevice dependency to 1.3.0
+  - Bump libplist dependency to 2.2.0
+  - Improve README.md with project description, installation, contributing and
+    usage sections
 
 Version 1.1.3
 ~~~~~~~~~~~~~

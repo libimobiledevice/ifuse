@@ -30,7 +30,7 @@ sudo apt-get install \
 	libtool-bin \
 	libplist-dev \
 	libimobiledevice-dev \
-	libfuse3-dev \
+	libfuse-dev \
 	usbmuxd
 ```
 

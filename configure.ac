@@ -47,7 +47,6 @@ Configuration for $PACKAGE $VERSION:
 -------------------------------------------
 
   Install prefix ..........: $prefix
-  libimobiledevice API ....: $libimobiledevice_VERSION
 
   Now type 'make' to build $PACKAGE $VERSION,
   and then 'make install' for installation.

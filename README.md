@@ -33,6 +33,10 @@ sudo apt-get install \
 	libfuse-dev \
 	usbmuxd
 ```
+### Arch Linux
+```shell
+sudo pacman -S --noconfirm base-devel git
+```
 
 Then clone the actual project repository:
 ```shell

@@ -17,6 +17,9 @@ Some key features are:
 
 ## Installation / Getting started
 
+Please note that `usbmuxd` must also be installed. `ifuse` will not be able to
+communicate with devices without it.
+
 ### Debian / Ubuntu Linux
 
 First install all required dependencies and build tools:

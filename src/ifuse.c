@@ -820,7 +820,7 @@ int main(int argc, char *argv[])
 		} else {
 			printf("ERROR: No device found!\n");
 		}
-		fprintf(stderr, "Is the device properly connected?\n");
+		fprintf(stderr, "Ensure that the device properly connected and usbmuxd is installed.\n");
 		fprintf(stderr, "If it is make sure that your user has permissions to access the raw USB device.\n");
 		fprintf(stderr, "If you're still having issues try unplugging the device and reconnecting it.\n");
 		return EXIT_FAILURE;

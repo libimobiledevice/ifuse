@@ -17,6 +17,9 @@ Some key features are:
 
 ## Installation / Getting started
 
+Please note that [usbmuxd](https://github.com/libimobiledevice/usbmuxd) must be properly installed for `ifuse` to be able to
+communicate with devices.
+
 ### Debian / Ubuntu Linux
 
 First install all required dependencies and build tools:
@@ -169,4 +172,4 @@ iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
 This project is an independent software application and has not been authorized,
 sponsored, or otherwise approved by Apple Inc.
 
-README Updated on: 2024-11-15
+README Updated on: 2025-09-08

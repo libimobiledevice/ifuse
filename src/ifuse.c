@@ -19,7 +19,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#define FUSE_USE_VERSION  26
+#define FUSE_USE_VERSION  30
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
@@ -205,7 +205,7 @@ static int get_afc_file_mode(afc_file_mode_t *afc_mode, int flags)
 	return 0;
 }
 
-static int ifuse_getattr(const char *path, struct stat *stbuf)
+static int ifuse_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi)
 {
 	int i;
 	int res = 0;
@@ -275,7 +275,7 @@ static int ifuse_getattr(const char *path, struct stat *stbuf)
 	return res;
 }
 
-static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
+static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi, enum fuse_readdir_flags flags)
 {
 	int i;
 	char **dirs = NULL;
@@ -287,7 +287,7 @@ static int ifuse_readdir(const char *path, void *buf, fuse_fill_dir_t filler, of
 		return -ENOENT;
 
 	for (i = 0; dirs[i]; i++) {
-		filler(buf, dirs[i], NULL, 0);
+		filler(buf, dirs[i], NULL, 0, 0);
 	}
 
 	free_dictionary(dirs);
@@ -366,7 +366,7 @@ static int ifuse_write(const char *path, const char *buf, size_t size, off_t off
 	return bytes;
 }
 
-static int ifuse_utimens(const char *path, const struct timespec tv[2])
+static int ifuse_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
 	uint64_t mtime = (uint64_t)tv[1].tv_sec * (uint64_t)1000000000 + (uint64_t)tv[1].tv_nsec;
@@ -398,11 +398,11 @@ static int ifuse_release(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
-void *ifuse_init(struct fuse_conn_info *conn)
+void *ifuse_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
 {
 	afc_client_t afc = NULL;
 
-	conn->async_read = 0;
+	conn->want &= FUSE_CAP_ASYNC_READ;
 
 	if (house_arrest) {
 		afc_client_new_from_house_arrest_client(house_arrest, &afc);
@@ -482,22 +482,10 @@ int ifuse_statfs(const char *path, struct statvfs *stats)
 	return 0;
 }
 
-int ifuse_truncate(const char *path, off_t size)
+int ifuse_truncate(const char *path, off_t size, struct fuse_file_info *fi)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
 	afc_error_t err = afc_truncate(afc, path, size);
-	if (err != AFC_E_SUCCESS) {
-		int res = get_afc_error_as_errno(err);
-		return -res;
-	}
-	return 0;
-}
-
-int ifuse_ftruncate(const char *path, off_t size, struct fuse_file_info *fi)
-{
-	afc_client_t afc = fuse_get_context()->private_data;
-
-	afc_error_t err = afc_file_truncate(afc, fi->fh, size);
 	if (err != AFC_E_SUCCESS) {
 		int res = get_afc_error_as_errno(err);
 		return -res;
@@ -566,7 +554,7 @@ int ifuse_unlink(const char *path)
 	return -get_afc_error_as_errno(err);
 }
 
-int ifuse_rename(const char *from, const char *to)
+int ifuse_rename(const char *from, const char *to, unsigned int flags)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
 
@@ -599,7 +587,6 @@ static struct fuse_operations ifuse_oper = {
 	.read = ifuse_read,
 	.write = ifuse_write,
 	.truncate = ifuse_truncate,
-	.ftruncate = ifuse_ftruncate,
 	.readlink = ifuse_readlink,
 	.symlink = ifuse_symlink,
 	.link = ifuse_link,

@@ -31,7 +31,7 @@ sudo apt-get install \
 	libtool-bin \
 	libplist-dev \
 	libimobiledevice-dev \
-	libfuse-dev \
+	libfuse3-dev \
 	usbmuxd
 ```
 
@@ -150,8 +150,8 @@ We are still working on the guidelines so bear with us!
 ## Links
 
 * Homepage: https://libimobiledevice.org/
-* Repository: https://git.libimobiledevice.org/ifuse.git
-* Repository (Mirror): https://github.com/libimobiledevice/ifuse.git
+* Repository: https://github.com/libimobiledevice/ifuse.git
+* Repository (Mirror): https://git.libimobiledevice.org/ifuse.git
 * Issue Tracker: https://github.com/libimobiledevice/ifuse/issues
 * Mailing List: https://lists.libimobiledevice.org/mailman/listinfo/libimobiledevice-devel
 * Twitter: https://twitter.com/libimobiledev
@@ -169,4 +169,4 @@ iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
 This project is an independent software application and has not been authorized,
 sponsored, or otherwise approved by Apple Inc.
 
-README Updated on: 2022-04-04
+README Updated on: 2024-11-15

@@ -69,9 +69,23 @@ in for the group change to become visible.
 
 ## Usage
 
-To mount the media partition from the device run:
+To pair the iPhone device to your computer, plug in your iPhone to your computer, and return to your iPhone. Unlock your iPhone, and when prompted, trust your computer and enter your passcode.
+
+Then, use the following command to pair your device to your computer
+```shell
+idevice pair
+```
+
+To mount the media partition from the device, run the following command:
 ```shell
 ifuse <mountpoint>
+```
+
+Example command that allows you to create a related directory and then mount the iPhone's file system to it.
+```shell
+mkdir ~/temp/iphone
+
+ifuse ~/temp/iphone
 ```
 
 **HINT:** *If you mount your device as regular user, the system might complain that

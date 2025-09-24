@@ -447,6 +447,14 @@ int ifuse_flush(const char *path, struct fuse_file_info *fi)
 	return 0;
 }
 
+int ifuse_chmod(const char *path, mode_t mode, struct fuse_file_info *fi) {
+	return 0;
+}
+
+int ifuse_chown(const char *file, uid_t user, gid_t group, struct fuse_file_info *fi) {
+	return 0;
+}
+
 int ifuse_statfs(const char *path, struct statvfs *stats)
 {
 	afc_client_t afc = fuse_get_context()->private_data;
@@ -596,7 +604,9 @@ static struct fuse_operations ifuse_oper = {
 	.fsync = ifuse_fsync,
 	.release = ifuse_release,
 	.init = ifuse_init,
-	.destroy = ifuse_cleanup
+	.destroy = ifuse_cleanup,
+	.chmod = ifuse_chmod,
+	.chown = ifuse_chown,
 };
 
 static void print_usage()

@@ -20,6 +20,7 @@
  */
 
 #define FUSE_USE_VERSION  30
+#define FUSE_DARWIN_ENABLE_EXTENSIONS 0
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>

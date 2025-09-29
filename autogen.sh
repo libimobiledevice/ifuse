@@ -7,6 +7,12 @@ test -z "$srcdir" && srcdir=.
 (
   cd "$srcdir"
 
+  gprefix=`which glibtoolize 2>&1 >/dev/null`
+  if [ $? -eq 0 ]; then
+    glibtoolize --force
+  else
+    libtoolize --force
+  fi
   aclocal
   autoheader
   automake --add-missing

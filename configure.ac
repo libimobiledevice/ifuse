@@ -19,9 +19,9 @@ AM_PROG_CC_C_O
 LT_INIT
 
 # Checks for libraries.
-PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.3.0)
+PKG_CHECK_MODULES(libimobiledevice, libimobiledevice-1.0 >= 1.4.0)
 PKG_CHECK_MODULES(libfuse, fuse3 >= 3.0.0)
-PKG_CHECK_MODULES(libplist, libplist-2.0 >= 2.2.0)
+PKG_CHECK_MODULES(libplist, libplist-2.0 >= 2.3.0)
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdint.h stdlib.h string.h])

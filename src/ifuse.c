@@ -208,70 +208,62 @@ static int get_afc_file_mode(afc_file_mode_t *afc_mode, int flags)
 
 static int ifuse_getattr(const char *path, struct stat *stbuf, struct fuse_file_info *fi)
 {
-	int i;
 	int res = 0;
-	char **info = NULL;
+	plist_t info = NULL;
 
 	afc_client_t afc = fuse_get_context()->private_data;
-	afc_error_t ret = afc_get_file_info(afc, path, &info);
+	afc_error_t ret = afc_get_file_info_plist(afc, path, &info);
 
 	memset(stbuf, 0, sizeof(struct stat));
 	if (ret != AFC_E_SUCCESS) {
 		int e = get_afc_error_as_errno(ret);
-		res = -e;
+		return -e;
 	} else if (!info) {
-		res = -1;
-	} else {
-		// get file attributes from info list
-		for (i = 0; info[i]; i += 2) {
-			if (!strcmp(info[i], "st_size")) {
-				stbuf->st_size = atoll(info[i+1]);
-			} else if (!strcmp(info[i], "st_blocks")) {
-				stbuf->st_blocks = atoi(info[i+1]);
-			} else if (!strcmp(info[i], "st_ifmt")) {
-				if (!strcmp(info[i+1], "S_IFREG")) {
-					stbuf->st_mode = S_IFREG;
-				} else if (!strcmp(info[i+1], "S_IFDIR")) {
-					stbuf->st_mode = S_IFDIR;
-				} else if (!strcmp(info[i+1], "S_IFLNK")) {
-					stbuf->st_mode = S_IFLNK;
-				} else if (!strcmp(info[i+1], "S_IFBLK")) {
-					stbuf->st_mode = S_IFBLK;
-				} else if (!strcmp(info[i+1], "S_IFCHR")) {
-					stbuf->st_mode = S_IFCHR;
-				} else if (!strcmp(info[i+1], "S_IFIFO")) {
-					stbuf->st_mode = S_IFIFO;
-				} else if (!strcmp(info[i+1], "S_IFSOCK")) {
-					stbuf->st_mode = S_IFSOCK;
-				}
-			} else if (!strcmp(info[i], "st_nlink")) {
-				stbuf->st_nlink = atoi(info[i+1]);
-			} else if (!strcmp(info[i], "st_mtime")) {
-				stbuf->st_mtime = (time_t)(atoll(info[i+1]) / 1000000000);
-			}
-#ifdef _DARWIN_FEATURE_64_BIT_INODE
-			else if (!strcmp(info[i], "st_birthtime")) { /* available on iOS 7+ */
-				stbuf->st_birthtime = (time_t)(atoll(info[i+1]) / 1000000000);
-			}
-#endif
-		}
-		free_dictionary(info);
-
-		// set permission bits according to the file type
-		if (S_ISDIR(stbuf->st_mode)) {
-			stbuf->st_mode |= 0755;
-		} else if (S_ISLNK(stbuf->st_mode)) {
-			stbuf->st_mode |= 0777;
-		} else {
-			stbuf->st_mode |= 0644;
-		}
-
-		// and set some additional info
-		stbuf->st_uid = getuid();
-		stbuf->st_gid = getgid();
-
-		stbuf->st_blksize = g_blocksize;
+		return -1;
 	}
+
+	stbuf->st_size = plist_dict_get_uint(info, "st_size");
+	stbuf->st_blocks = plist_dict_get_uint(info, "st_blocks");
+	const char* s_ifmt = plist_get_string_ptr(plist_dict_get_item(info, "st_ifmt"), NULL);
+	if (s_ifmt) {
+		if (!strcmp(s_ifmt, "S_IFREG")) {
+			stbuf->st_mode = S_IFREG;
+		} else if (!strcmp(s_ifmt, "S_IFDIR")) {
+			stbuf->st_mode = S_IFDIR;
+		} else if (!strcmp(s_ifmt, "S_IFLNK")) {
+			stbuf->st_mode = S_IFLNK;
+		} else if (!strcmp(s_ifmt, "S_IFBLK")) {
+			stbuf->st_mode = S_IFBLK;
+		} else if (!strcmp(s_ifmt, "S_IFCHR")) {
+			stbuf->st_mode = S_IFCHR;
+		} else if (!strcmp(s_ifmt, "S_IFIFO")) {
+			stbuf->st_mode = S_IFIFO;
+		} else if (!strcmp(s_ifmt, "S_IFSOCK")) {
+			stbuf->st_mode = S_IFSOCK;
+		}
+	}
+	stbuf->st_nlink = plist_dict_get_uint(info, "st_nlink");
+	stbuf->st_mtime = (time_t)(plist_dict_get_uint(info, "st_mtime") / 1000000000);
+#ifdef _DARWIN_FEATURE_64_BIT_INODE
+	/* available on iOS 7+ */
+	stbuf->st_birthtime = (time_t)(plist_dict_get_uint(info, "st_birthtime") / 1000000000);
+#endif
+	plist_free(info);
+
+	// set permission bits according to the file type
+	if (S_ISDIR(stbuf->st_mode)) {
+		stbuf->st_mode |= 0755;
+	} else if (S_ISLNK(stbuf->st_mode)) {
+		stbuf->st_mode |= 0777;
+	} else {
+		stbuf->st_mode |= 0644;
+	}
+
+	// and set some additional info
+	stbuf->st_uid = getuid();
+	stbuf->st_gid = getgid();
+
+	stbuf->st_blksize = g_blocksize;
 
 	return res;
 }
@@ -416,16 +408,9 @@ void *ifuse_init(struct fuse_conn_info *conn, struct fuse_config *cfg)
 
 	if (afc) {
 		// get file system block size
-		int i;
-		char **info_raw = NULL;
-		if ((AFC_E_SUCCESS == afc_get_device_info(afc, &info_raw)) && info_raw) {
-			for (i = 0; info_raw[i]; i+=2) {
-				if (!strcmp(info_raw[i], "FSBlockSize")) {
-					g_blocksize = atoi(info_raw[i + 1]);
-					break;
-				}
-			}
-			free_dictionary(info_raw);
+		plist_t info = NULL;
+		if ((AFC_E_SUCCESS == afc_get_device_info_plist(afc, &info)) && info) {
+			g_blocksize = plist_dict_get_uint(info, "FSBlockSize");
 		}
 	}
 

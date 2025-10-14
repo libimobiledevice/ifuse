@@ -2,6 +2,22 @@
 
 *A fuse filesystem implementation to access the contents of iOS devices.*
 
+![](https://github.com/libimobiledevice/ifuse/actions/workflows/build.yml/badge.svg)
+
+## Table of Contents
+- [Features](#features)
+- [Building](#building)
+  - [Prerequisites](#prerequisites)
+    - [Linux (Debian/Ubuntu based)](#linux-debianubuntu-based)
+    - [macOS](#macos)
+  - [Configuring the source tree](#configuring-the-source-tree)
+  - [Building and installation](#building-and-installation)
+- [Usage](#usage)
+- [Contributing](#contributing)
+- [Links](#links)
+- [License](#license)
+- [Credits](#credits)
+
 ## Features
 
 This project allows mounting various directories of an iOS device locally using
@@ -15,60 +31,167 @@ Some key features are:
 - **Browse**: Allows to retrieve a list of installed file-sharing enabled apps
 - **Implementation**: Uses [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice) for communication with the device
 
-## Installation / Getting started
+## Building
 
-Please note that [usbmuxd](https://github.com/libimobiledevice/usbmuxd) must be properly installed for `ifuse` to be able to
+### Prerequisites
+
+You need to have a working compiler (gcc/clang) and development environent
+available. This project uses autotools for the build process, allowing to
+have common build steps across different platforms.
+Only the prerequisites differ and they are described in this section.
+
+#### Linux (Debian/Ubuntu based)
+
+* Install all required dependencies and build tools:
+  ```shell
+  sudo apt-get install \
+  	build-essential \
+  	pkg-config \
+  	checkinstall \
+  	git \
+  	autoconf \
+  	automake \
+  	libtool-bin \
+  	libplist-dev \
+  	libimobiledevice-dev \
+  	libfuse3-dev \
+  	usbmuxd
+  ```
+
+* [usbmuxd](https://github.com/libimobiledevice/usbmuxd) must be properly installed for `ifuse` to be able to
 communicate with devices.
 
-### Debian / Ubuntu Linux
-
-First install all required dependencies and build tools:
-```shell
-sudo apt-get install \
-	build-essential \
-	pkg-config \
-	checkinstall \
-	git \
-	autoconf \
-	automake \
-	libtool-bin \
-	libplist-dev \
-	libimobiledevice-dev \
-	libfuse3-dev \
-	usbmuxd
-```
-
-Then clone the actual project repository:
-```shell
-git clone https://github.com/libimobiledevice/ifuse.git
-cd ifuse
-```
-
-Now you can build and install it:
-```shell
-./autogen.sh
-make
-sudo make install
-```
-
-### Setting up FUSE
-
-Note that on some systems, you may have to load the `fuse` kernel
+* Note: On some systems, you may have to load the `fuse` kernel
 module first and to ensure that you are a member of the `fuse` group:
 
+  ```shell
+  sudo modprobe fuse
+  sudo adduser $USER fuse
+  ```
+
+  You can check your membership of the `fuse` group with:
+
+  ```shell
+  id | grep fuse && echo yes! || echo not yet...
+  ```
+
+  If you have just added yourself, you will need to logout and log back
+  in for the group change to become visible.
+
+
+#### macOS
+
+* Make sure the Xcode command line tools are installed.
+
+  Use either [MacPorts](https://www.macports.org/)
+  or [Homebrew](https://brew.sh/) to install `automake`, `autoconf`, and `libtool`.
+
+  Using MacPorts:
+  ```shell
+  sudo port install libtool autoconf automake
+  ```
+
+  Using Homebrew:
+  ```shell
+  brew install libtool autoconf automake
+  ```
+
+  `ifuse` has a few dependencies from the libimobiledevice project.
+  You will have to build and install the following:
+  * [libplist](https://github.com/libimobiledevice/libplist)
+  * [libimobiledevice-glue](https://github.com/libimobiledevice/libimobiledevice-glue)
+  * [libusbmuxd](https://github.com/libimobiledevice/libusbmuxd)
+  * [libimobiledevice](https://github.com/libimobiledevice/libimobiledevice)
+
+  Check their `README.md` for building and installation instructions.
+
+* Download [macFUSE](https://github.com/macfuse/macfuse/releases/) dmg, mount it, and double click the `Install macFUSE` installer.
+  This will also install the libfuse library and development files.
+
+  Note: For macFUSE to work, you need to allow the macFUSE system extension in *Settings* -> *Privacy & Security* -> *Security*. Note that changes will require a system restart.
+
+
+### Configuring the source tree
+
+You can build the source code from a git checkout, or from a `.tar.bz2` release tarball from [Releases](https://github.com/libimobiledevice/ifuse/releases).
+Before we can build it, the source tree has to be configured for building. The steps depend on where you got the source from.
+
+* **From git**
+
+  If you haven't done already, clone the actual project repository and change into the directory.
+  ```shell
+  git clone https://github.com/libimobiledevice/ifuse.git
+  cd ifuse
+  ```
+
+  Configure the source tree for building:
+  ```shell
+  ./autogen.sh
+  ```
+
+* **From release tarball (.tar.bz2)**
+
+  When using an official [release tarball](https://github.com/libimobiledevice/ifuse/releases) (`ifuse-x.y.z.tar.bz2`)
+  the procedure is slightly different.
+
+  Extract the tarball:
+  ```shell
+  tar xjf ifuse-x.y.z.tar.bz2
+  cd ifuse-x.y.z
+  ```
+
+  Configure the source tree for building:
+  ```shell
+  ./configure
+  ```
+
+Both `./configure` and `./autogen.sh` (which generates and calls `configure`) accept a few options, for example `--prefix` to allow
+building for a different target folder. You can simply pass them like this:
+
 ```shell
-sudo modprobe fuse
-sudo adduser $USER fuse
+./autogen.sh --prefix=/usr/local
+```
+or
+```shell
+./configure --prefix=/usr/local
 ```
 
-You can check your membership of the `fuse` group with:
+Once the command is successful, the last few lines of output will look like this:
+```
+[...]
+config.status: creating config.h
+config.status: config.h is unchanged
+config.status: executing depfiles commands
+config.status: executing libtool commands
 
-```shell
-id | grep fuse && echo yes! || echo not yet...
+Configuration for ifuse 1.2.0:
+-------------------------------------------
+
+  Install prefix: .........: /usr/local
+
+  Now type 'make' to build ifuse 1.2.0,
+  and then 'make install' for installation.
 ```
 
-If you have just added yourself, you will need to logout and log back
-in for the group change to become visible.
+### Building and installation
+
+If you followed all the steps successfully, and `autogen.sh` or `configure` did not print any errors,
+you are ready to build the project. This is simply done with
+
+```shell
+make
+```
+
+If no errors are emitted you are ready for installation. Depending on whether
+the current user has permissions to write to the destination directory or not,
+you would either run
+```shell
+make install
+```
+_OR_
+```shell
+sudo make install
+```
 
 ## Usage
 
@@ -86,7 +209,7 @@ To unmount as a regular user you must run:
 fusermount -u <mountpoint>
 ```
 
-By default, ifuse (via the AFC protocol) gives access to the `/var/root/Media/`
+By default, ifuse (via the AFC protocol) gives access to the `/var/mobile/Media/`
 chroot on the device (containing music/pictures). This is the right and safe
 way to access the device. However, if the device has been jailbroken, a full
 view of the device's filesystem might be available using the following command
@@ -100,10 +223,9 @@ the device to enable root filesystem usage. For instance  blackra1n does not
 install it and thus does not enable root filesystem access by default!
 Use with care as the AFC protocol was not made to access the root filesystem.
 
-If using libimobiledevice >= 1.1.0, ifuse can also be used with the iTunes
-file/document sharing feature. It allows you to exchange files with an
-application on the device directly through it's documents folder by specifing
-the application identifier like this:
+**ifuse** can also be used with the iTunes file/document sharing feature.
+It allows you to exchange files with an application on the device directly
+through it's documents folder by specifing the application identifier like this:
 ```shell
 ifuse --documents <appid> <mountpoint>
 ```
@@ -172,4 +294,4 @@ iPadOS, tvOS, watchOS, and macOS are trademarks of Apple Inc.
 This project is an independent software application and has not been authorized,
 sponsored, or otherwise approved by Apple Inc.
 
-README Updated on: 2025-09-08
+README Updated on: 2025-10-14

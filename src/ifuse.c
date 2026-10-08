@@ -28,6 +28,7 @@
 
 #include <fuse.h>
 #include <stdio.h>
+#include <pthread.h>
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -313,6 +314,11 @@ static int ifuse_create(const char *path, mode_t mode, struct fuse_file_info *fi
 	return ifuse_open(path, fi);
 }
 
+/* AFC has no positional read/write: every I/O is seek + read/write on a shared handle.
+ * fuse-t (NFS-based) issues requests in parallel, so two threads could interleave between
+ * the seek and the transfer and move data to the wrong offset. Serialize the pair. */
+static pthread_mutex_t afc_io_lock = PTHREAD_MUTEX_INITIALIZER;
+
 static int ifuse_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
 {
 	uint32_t bytes = 0;
@@ -321,19 +327,24 @@ static int ifuse_read(const char *path, char *buf, size_t size, off_t offset, st
 	if (size == 0)
 		return 0;
 
+	size_t done = 0;
+	pthread_mutex_lock(&afc_io_lock);
 	afc_error_t err = afc_file_seek(afc, fi->fh, offset, SEEK_SET);
+	/* A short AFC read is not EOF; keep reading until size or a zero-byte read. */
+	while (err == AFC_E_SUCCESS && done < size) {
+		bytes = 0;
+		err = afc_file_read(afc, fi->fh, buf + done, size - done, &bytes);
+		if (bytes == 0)
+			break;
+		done += bytes;
+	}
+	pthread_mutex_unlock(&afc_io_lock);
 	if (err != AFC_E_SUCCESS) {
 		int res = get_afc_error_as_errno(err);
 		return -res;
 	}
 
-	err = afc_file_read(afc, fi->fh, buf, size, &bytes);
-	if (err != AFC_E_SUCCESS) {
-		int res = get_afc_error_as_errno(err);
-		return -res;
-	}
-
-	return bytes;
+	return done;
 }
 
 static int ifuse_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
@@ -344,19 +355,23 @@ static int ifuse_write(const char *path, const char *buf, size_t size, off_t off
 	if (size == 0)
 		return 0;
 
+	size_t done = 0;
+	pthread_mutex_lock(&afc_io_lock);
 	afc_error_t err = afc_file_seek(afc, fi->fh, offset, SEEK_SET);
+	while (err == AFC_E_SUCCESS && done < size) {
+		bytes = 0;
+		err = afc_file_write(afc, fi->fh, buf + done, size - done, &bytes);
+		if (bytes == 0)
+			break;
+		done += bytes;
+	}
+	pthread_mutex_unlock(&afc_io_lock);
 	if (err != AFC_E_SUCCESS) {
 		int res = get_afc_error_as_errno(err);
 		return -res;
 	}
 
-	err = afc_file_write(afc, fi->fh, buf, size, &bytes);
-	if (err != AFC_E_SUCCESS) {
-		int res = get_afc_error_as_errno(err);
-		return -res;
-	}
-
-	return bytes;
+	return done;
 }
 
 static int ifuse_utimens(const char *path, const struct timespec tv[2], struct fuse_file_info *fi)
